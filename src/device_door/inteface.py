@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from src.library.pub_sub import Sub
-from .event import EventDeviceDoor
+from .event import EventDoor
 
 
 class DeviceDoor(ABC):
@@ -13,5 +13,5 @@ class DeviceDoor(ABC):
         pass
 
     @abstractmethod
-    def events(self) -> Sub[EventDeviceDoor]:
+    def events(self) -> Sub[EventDoor]:
         pass

@@ -10,9 +10,10 @@ from src.smart_door.core import (
     MsgCameraEvent,
     MsgDoorEvent,
     MsgDoorEvent,
-    EventDeviceCamera,
-    EventDeviceDoor,
+    ModelReady,
 )
+from src.device_camera.event import EventCameraConnected
+from src.device_door.event import EventDoorConnected
 
 
 def test_init() -> None:
@@ -32,15 +33,15 @@ def test_transition_to_ready_state() -> None:
     model, _ = init()
 
     model, _ = transition(
-        model,
-        MsgCameraEvent(type="camera_event", event=EventDeviceCamera.Connected),
+        model=model,
+        msg=MsgCameraEvent(event=EventCameraConnected()),
     )
 
     model, _ = transition(
-        model,
-        MsgDoorEvent(type="door_event", event=EventDeviceDoor.Connected),
+        model=model,
+        msg=MsgDoorEvent(event=EventDoorConnected()),
     )
 
-    assert model.type == "ready"
+    assert isinstance(model, ModelReady)
     assert model.camera.state == CameraState.Idle
     assert model.door.state == DoorState.Closed

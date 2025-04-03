@@ -4,12 +4,12 @@ from typing import Literal, Union
 
 @dataclass
 class EventDoorConnected:
-    type: Literal["connected"]
+    type: Literal["connected"] = "connected"
 
 
 @dataclass
 class EventDoorDisconnected:
-    type: Literal["disconnected"]
+    type: Literal["disconnected"] = "disconnected"
 
 
-EventDeviceDoor = Union[EventDoorConnected, EventDoorDisconnected]
+EventDoor = Union[EventDoorConnected, EventDoorDisconnected]
