@@ -38,7 +38,7 @@ class YoloImageClassifier(ImageClassifier):
         self.confidence_threshold = confidence_threshold
         self.class_indices = COCO_DATASET_CLASS_INDICES
 
-    def classify(self, images: list[Image]) -> Iterator[Classification]:
+    def classify(self, images: list[Image]) -> list[Classification]:
         """
         Classify the images using YOLOv8.
 
@@ -48,7 +48,7 @@ class YoloImageClassifier(ImageClassifier):
         Returns:
             List of classifications with label and confidence
         """
-        return self._classify_images(images)
+        return list(self._classify_images(images))
 
     def _classify_images(
         self,

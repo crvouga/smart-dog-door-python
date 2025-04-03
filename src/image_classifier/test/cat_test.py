@@ -1,16 +1,20 @@
 from src.image.image import Image
 from src.image_classifier.classification import Classification
 from src.image_classifier.test.fixture import Fixture
-from typing import Iterator
 
 
-def _assert_cat(results: Iterator[Classification]) -> None:
+def _assert_cat(results: list[Classification]) -> None:
+    assert len(results) > 0
+
     result = max(results, key=lambda x: x.weight)
 
     assert "cat" in result.label
 
 
-def _assert_not_cat(results: Iterator[Classification]) -> None:
+def _assert_not_cat(results: list[Classification]) -> None:
+    if len(results) == 0:
+        return
+
     result = max(results, key=lambda x: x.weight)
 
     assert "cat" not in result.label
@@ -56,10 +60,30 @@ def test_cat_security_footage_2() -> None:
     _assert_cat(results)
 
 
+def test_cat_security_footage_3() -> None:
+    f = Fixture()
+
+    images = [Image.from_file("./images/cat_security_footage/3.jpeg")]
+
+    results = f.image_classifier.classify(images=images)
+
+    _assert_cat(results)
+
+
 def test_not_cat_dog_clear_front() -> None:
     f = Fixture()
 
     images = [Image.from_file("./images/dog_clear_front/1.jpeg")]
+
+    results = f.image_classifier.classify(images=images)
+
+    _assert_not_cat(results)
+
+
+def test_not_cat_person_clear_front() -> None:
+    f = Fixture()
+
+    images = [Image.from_file("./images/person_clear_front/1.jpeg")]
 
     results = f.image_classifier.classify(images=images)
 
