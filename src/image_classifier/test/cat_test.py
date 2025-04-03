@@ -1,7 +1,6 @@
 from src.image.image import Image
-from src.image_classifier.impl_fake import ImageClassifierFake
 from src.image_classifier.classification import Classification
-from src.image_classifier.test.images.fixture import Fixture
+from src.image_classifier.test.fixture import Fixture
 
 
 def test_classify_returns_fake_classification():
