@@ -1,5 +1,5 @@
 # Python project Makefile
-.PHONY: run test install lint clean
+.PHONY: run test install lint clean develop
 
 # Default target executed when no arguments are given to make
 default: start
@@ -9,7 +9,7 @@ start:
 	python ./src/main.py
 
 dev:
-	watchmedo auto-restart --patterns="*.py" --ignore-patterns="*.pyc,__pycache__/*" --recursive --directory="src" --debounce-interval=1.0 -- python ./src/main.py
+	watchmedo auto-restart --patterns="*.py" --ignore-patterns="*.pyc,__pycache__/*" --recursive  --debounce-interval=1.0 -- python ./src/main.py
 
 # Run tests
 test:
