@@ -12,4 +12,4 @@ class EventDoorDisconnected:
     type: Literal["disconnected"]
 
 
-EventDoor = Union[EventDoorConnected, EventDoorDisconnected]
+EventDeviceDoor = Union[EventDoorConnected, EventDoorDisconnected]
