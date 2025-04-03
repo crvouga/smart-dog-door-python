@@ -25,7 +25,9 @@ class SmartDoor:
             device_door=device_door,
         )
         self.state_machine = StateMachine(
-            init=init, transition=transition, interpret_effect=self._interpret_effect
+            init=init,
+            transition=transition,
+            interpret_effect=self._interpret_effect,
         )
 
     def _interpret_effect(self, effect: Effect, msg_queue: queue.Queue[Msg]) -> None:

@@ -18,7 +18,7 @@ from .core import (
     MsgDoorEvent,
     MsgCameraEvent,
 )
-from src.library.result import attempt
+from src.library.result import attempt, Ok, Err
 import queue
 from .deps import Deps
 from src.library.time import ticks
@@ -35,7 +35,7 @@ def interpret_effect(deps: Deps, effect: Effect, msg_queue: queue.Queue[Msg]) ->
 
     if isinstance(effect, EffectSubscribeTick):
         sub = ticks(interval_seconds=1)
-        sub.sub(lambda time: msg_queue.put(MsgTick(time=time)))
+        sub.sub(lambda dt: msg_queue.put(MsgTick(time=dt)))
 
     if isinstance(effect, EffectCaptureFrames):
         result = attempt(lambda: deps.device_camera.capture())

@@ -27,7 +27,7 @@ class CameraState(Enum):
 class ModelCamera:
     state: CameraState
     state_start_time: datetime
-    latest_classification: list[list[Classification]]
+    latest_classification: list[Classification]
 
 
 class DoorState(Enum):

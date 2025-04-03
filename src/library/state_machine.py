@@ -1,4 +1,4 @@
-from typing import Callable, Generic, TypeVar, Optional
+from typing import Callable, Generic, TypeVar, Optional, List
 import queue
 import threading
 
@@ -8,16 +8,16 @@ Effect = TypeVar("Effect")
 
 
 class StateMachine(Generic[Model, Msg, Effect]):
-    init: Callable[[], Model]
-    transition: Callable[[Model, Msg], tuple[Model, list[Effect]]]
-    interpret_effect: Callable[[Effect], None]
+    init: Callable[[], tuple[Model, List[Effect]]]
+    transition: Callable[[Model, Msg], tuple[Model, List[Effect]]]
+    interpret_effect: Callable[[Effect, queue.Queue[Msg]], None]
     msg_queue: queue.Queue[Msg]
     model: Optional[Model]
 
     def __init__(
         self,
-        init: Callable[[], Model],
-        transition: Callable[[Model, Msg], tuple[Model, list[Effect]]],
+        init: Callable[[], tuple[Model, List[Effect]]],
+        transition: Callable[[Model, Msg], tuple[Model, List[Effect]]],
         interpret_effect: Callable[[Effect, queue.Queue[Msg]], None],
     ) -> None:
         self.init = init
@@ -44,9 +44,9 @@ class StateMachine(Generic[Model, Msg, Effect]):
         while True:
             msg = self.msg_queue.get()
 
-            model, effects = self.transition(self.model, msg)
+            if self.model is not None:
+                model, effects = self.transition(self.model, msg)
+                self.model = model
 
-            self.model = model
-
-            for effect in effects:
-                self._interpret_effect(effect)
+                for effect in effects:
+                    self._interpret_effect(effect)
