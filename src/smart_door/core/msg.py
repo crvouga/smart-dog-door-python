@@ -46,7 +46,7 @@ class MsgFramesCaptureDone:
 
 @dataclass
 class MsgFramesClassifyDone:
-    result: Result[list[list[Classification]], Exception]
+    result: Result[list[Classification], Exception]
     type: Literal["frames_classify_done"] = "frames_classify_done"
 
 

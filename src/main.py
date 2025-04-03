@@ -9,7 +9,11 @@ def main() -> None:
     device_door = FakeDeviceDoor()
     device_camera = FakeDeviceCamera()
 
-    smart_door = SmartDoor()
+    smart_door = SmartDoor(
+        image_classifier=image_classifier,
+        device_camera=device_camera,
+        device_door=device_door,
+    )
 
     smart_door.start()
 
