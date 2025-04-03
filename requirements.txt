@@ -47,7 +47,7 @@ seaborn==0.13.2
 six==1.17.0
 sympy==1.13.1
 tomli==2.2.1
-torch==2.6.0
+torch==2.2.2
 torchvision==0.21.0
 tqdm==4.67.1
 typing_extensions==4.13.0

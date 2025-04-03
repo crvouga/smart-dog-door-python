@@ -10,12 +10,10 @@ from .core import (
     EffectCloseDoor,
 )
 import queue
-from .smart_door import SmartDoor
+from .deps import Deps
 
 
-def interpret_effect(
-    smart_door: SmartDoor, effect: Effect, msg_queue: queue.Queue[Msg]
-) -> None:
+def interpret_effect(deps: Deps, effect: Effect, msg_queue: queue.Queue[Msg]) -> None:
     if isinstance(effect, EffectSubscribeCamera):
         pass
 
