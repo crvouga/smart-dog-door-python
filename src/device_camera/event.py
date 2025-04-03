@@ -3,13 +3,13 @@ from typing import Literal, Union
 
 
 @dataclass
-class EventConnected:
-    type: Literal["connected"]
+class EventCameraConnected:
+    type: Literal["connected"] = "connected"
 
 
 @dataclass
-class EventDisconnected:
-    type: Literal["disconnected"]
+class EventCameraDisconnected:
+    type: Literal["disconnected"] = "disconnected"
 
 
-EventDeviceCamera = Union[EventConnected, EventDisconnected]
+EventCamera = Union[EventCameraConnected, EventCameraDisconnected]
