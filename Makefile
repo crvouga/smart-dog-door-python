@@ -13,7 +13,11 @@ dev:
 
 # Run tests
 test:
-	pytest-watch --patterns="*_test.py" --ignore-patterns="*.pyc,__pycache__/*" --recursive --debounce-interval=1.0 -- pytest
+	pytest
+
+# Run type checking
+tc:
+	mypy .
 
 # Install dependencies
 install:
