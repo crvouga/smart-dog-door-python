@@ -1,27 +1,49 @@
-from typing import Generic, TypeVar, Union
+from dataclasses import dataclass
+from typing import Generic, TypeVar, Literal, Union
 
 T = TypeVar("T")
 E = TypeVar("E", bound=Exception)
 
 
-class Result(Generic[T, E]):
-    __slots__ = ("_value", "_error")
+@dataclass(frozen=True)
+class Ok(Generic[T]):
+    value: T
+    type: Literal["ok"] = "ok"
 
-    def __init__(self, value: T = None, error: E = None):
-        object.__setattr__(self, "_value", value)
-        object.__setattr__(self, "_error", error)
+
+@dataclass(frozen=True)
+class Err(Generic[E]):
+    error: E
+    type: Literal["err"] = "err"
+
+
+class Result(Generic[T, E]):
+    @staticmethod
+    def success(value: T) -> "Result[T, E]":
+        return Result(Ok(value))
+
+    @staticmethod
+    def failure(error: E) -> "Result[T, E]":
+        return Result(Err(error))
+
+    def __init__(self, result: Union[Ok[T], Err[E]]):
+        self._result = result
 
     def is_ok(self) -> bool:
-        return self._error is None
+        return isinstance(self._result, Ok)
 
     def is_err(self) -> bool:
-        return self._error is not None
+        return isinstance(self._result, Err)
 
     def unwrap(self) -> T:
-        if self._error:
-            raise self._error
-        return self._value
+        if isinstance(self._result, Ok):
+            return self._result.value
+        raise self._result.error
 
-    # Prevent mutation
-    def __setattr__(self, key, value):
-        raise AttributeError("Result objects are immutable")
+
+def attempt(operation: callable) -> Result[T, E]:
+    try:
+        value = operation()
+        return Ok(value=value)
+    except Exception as e:
+        return Err(error=e)

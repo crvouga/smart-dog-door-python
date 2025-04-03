@@ -1,3 +1,5 @@
+import time
+from datetime import datetime
 from .core import (
     Effect,
     Msg,
@@ -8,29 +10,45 @@ from .core import (
     EffectSubscribeTick,
     EffectOpenDoor,
     EffectCloseDoor,
+    MsgFramesCaptureDone,
+    MsgFramesClassifyDone,
+    MsgDoorOpenDone,
+    MsgDoorCloseDone,
+    MsgTick,
+    MsgDoorEvent,
+    MsgCameraEvent,
 )
+from src.library.result import attempt
 import queue
 from .deps import Deps
+from src.library.time import ticks
 
 
 def interpret_effect(deps: Deps, effect: Effect, msg_queue: queue.Queue[Msg]) -> None:
     if isinstance(effect, EffectSubscribeCamera):
-        pass
+        sub = deps.device_camera.events()
+        sub.sub(lambda event: msg_queue.put(MsgCameraEvent(event=event)))
 
     if isinstance(effect, EffectSubscribeDoor):
-        pass
+        sub = deps.device_door.events()
+        sub.sub(lambda event: msg_queue.put(MsgDoorEvent(event=event)))
 
     if isinstance(effect, EffectSubscribeTick):
-        pass
+        sub = ticks(interval_seconds=1)
+        sub.sub(lambda time: msg_queue.put(MsgTick(time=time)))
 
     if isinstance(effect, EffectCaptureFrames):
-        pass
+        result = attempt(lambda: deps.device_camera.capture())
+        msg_queue.put(MsgFramesCaptureDone(result=result))
 
     if isinstance(effect, EffectClassifyFrames):
-        pass
+        result = attempt(lambda: deps.image_classifier.classify(effect.frames))
+        msg_queue.put(MsgFramesClassifyDone(result=result))
 
     if isinstance(effect, EffectOpenDoor):
-        pass
+        result = attempt(lambda: deps.device_door.open())
+        msg_queue.put(MsgDoorOpenDone(result=result))
 
     if isinstance(effect, EffectCloseDoor):
-        pass
+        result = attempt(lambda: deps.device_door.close())
+        msg_queue.put(MsgDoorCloseDone(result=result))

@@ -30,9 +30,6 @@ class Image:
         image._load_from_path(path)
         return image
 
-    def into_pil_image(self) -> PILImage.Image:
-        return PILImage.fromarray(self._array)
-
     def _load_from_path(self, path: str) -> None:
         """Load image from file path"""
         pil_image = PILImage.open(path)

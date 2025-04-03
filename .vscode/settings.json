@@ -7,6 +7,7 @@
         "docopt",
         "filelock",
         "fonttools",
+        "fromarray",
         "fsspec",
         "idna",
         "iniconfig",
@@ -15,6 +16,7 @@
         "mccabe",
         "mpmath",
         "mypy",
+        "ndarray",
         "networkx",
         "numpy",
         "opencv",
@@ -22,6 +24,7 @@
         "platformdirs",
         "pluggy",
         "psutil",
+        "pycache",
         "pycodestyle",
         "pyflakes",
         "pyparsing",
@@ -37,6 +40,7 @@
         "tzdata",
         "ultralytics",
         "urllib",
+        "watchmedo",
         "yolov",
         "zipp"
     ]

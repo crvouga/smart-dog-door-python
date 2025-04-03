@@ -12,9 +12,8 @@ class YoloModelSize(Enum):
     LARGE = "l"
     EXTRA_LARGE = "x"
 
-    @classmethod
-    def to_filename(cls, value: str) -> str:
-        return f"./models/yolov8{value}.pt"
+    def to_filename(self) -> str:
+        return f"./models/yolov8{self.value}.pt"
 
 
 COCO_DATASET_CLASS_INDICES = {"cat": 15, "dog": 16}
@@ -26,28 +25,11 @@ class YoloImageClassifier(ImageClassifier):
         model_size: YoloModelSize = YoloModelSize.NANO,
         confidence_threshold: float = 0.25,
     ) -> None:
-        """
-        Initialize the YOLO classifier.
-
-        Args:
-            model_size: Size of YOLO model (NANO, SMALL, MEDIUM, LARGE, EXTRA_LARGE)
-            confidence_threshold: Minimum confidence threshold for detections
-        """
-        filename = YoloModelSize.to_filename(model_size.value)
-        self.model = YOLO(filename)
+        self.model = YOLO(model_size.to_filename())
         self.confidence_threshold = confidence_threshold
         self.class_indices = COCO_DATASET_CLASS_INDICES
 
     def classify(self, images: list[Image]) -> list[Classification]:
-        """
-        Classify the images using YOLOv8.
-
-        Args:
-            images: List of images to classify
-
-        Returns:
-            List of classifications with label and confidence
-        """
         return list(self._classify_images(images))
 
     def _classify_images(
@@ -56,7 +38,7 @@ class YoloImageClassifier(ImageClassifier):
     ) -> Iterator[Classification]:
         for image in images:
             results = self.model(
-                source=image.into_pil_image(),
+                source=image.pil_image,
                 conf=self.confidence_threshold,
                 classes=list(self.class_indices.values()),
             )
