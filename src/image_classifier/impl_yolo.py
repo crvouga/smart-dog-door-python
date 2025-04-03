@@ -1,5 +1,4 @@
 from ultralytics import YOLO  # type: ignore
-from typing import List
 from src.image.image import Image
 from .interface import ImageClassifier, Classification
 from enum import Enum
