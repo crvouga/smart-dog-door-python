@@ -3,14 +3,25 @@ from src.image_classifier.classification import Classification
 from src.image_classifier.test.fixture import Fixture
 
 
-def test_classify_returns_fake_classification():
+def test_cat_clear_front() -> None:
     f = Fixture()
-    classifier = f.image_classifier
-    images = [Image()]
 
-    result = classifier.classify(images)
+    images = [Image.from_file("./images/cat_clear_front.jpeg")]
 
-    assert len(result) == 1
-    assert isinstance(result[0], Classification)
-    assert result[0].label == "fake"
-    assert result[0].weight == 0.5
+    results = f.image_classifier.classify(images=images)
+
+    result = max(results, key=lambda x: x.weight)
+
+    assert "cat" in result.label
+
+
+def test_cat_clear_front() -> None:
+    f = Fixture()
+
+    images = [Image.from_file("./images/cat_security_footage.jpeg")]
+
+    results = f.image_classifier.classify(images=images)
+
+    result = max(results, key=lambda x: x.weight)
+
+    assert "cat" in result.label

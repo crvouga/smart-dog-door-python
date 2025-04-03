@@ -19,6 +19,11 @@ test:
 tc:
 	mypy .
 
+check:
+	clear
+	make tc
+	make test
+
 # Install dependencies
 install:
 	pip install -r requirements.txt

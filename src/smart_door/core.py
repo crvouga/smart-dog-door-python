@@ -1,12 +1,8 @@
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, Union
 from enum import Enum, auto
 from datetime import datetime
 from src.image_classifier.classification import Classification
-
-#
-#
-#
 
 
 class ConnectionState(Enum):
@@ -19,11 +15,6 @@ class ModelConnecting:
     type: Literal["connecting"]
     camera: ConnectionState
     door: ConnectionState
-
-
-#
-#
-#
 
 
 class CameraState(Enum):
@@ -59,18 +50,7 @@ class ModelReady:
     door: ModelDoor
 
 
-#
-#
-#
-
-Model = ModelConnecting | ModelReady
-
-
-#
-#
-#
-#
-#
+Model = Union[ModelConnecting, ModelReady]
 
 
 @dataclass

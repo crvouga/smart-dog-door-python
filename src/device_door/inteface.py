@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, Union
 from src.library.pub_sub import Sub
 
 
@@ -14,16 +14,16 @@ class DoorClosedEvent:
     type: Literal["closed"]
 
 
-DoorEvent = DoorOpenedEvent | DoorClosedEvent
+DoorEvent = Union[DoorOpenedEvent, DoorClosedEvent]
 
 
 class DeviceDoor(ABC):
     @abstractmethod
-    def open(self):
+    def open(self) -> None:
         pass
 
     @abstractmethod
-    def close(self):
+    def close(self) -> None:
         pass
 
     @abstractmethod
