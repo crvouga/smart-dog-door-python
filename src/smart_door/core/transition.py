@@ -18,7 +18,8 @@ from .effect import Effect
 def transition(model: Model, msg: Msg) -> tuple[Model, list[Effect]]:
     if isinstance(model, ModelConnecting) and model.type == "connecting":
         return _transition_connecting(model=model, msg=msg)
-    elif isinstance(model, ModelReady) and model.type == "ready":
+
+    if isinstance(model, ModelReady) and model.type == "ready":
         return _transition_ready(model=model, msg=msg)
 
 
@@ -36,23 +37,24 @@ def _transition_connecting(
         and model_new.door == ConnectionState.Connected
     )
 
-    if is_ready:
-        return (
-            ModelReady(
-                type="ready",
-                camera=ModelCamera(
-                    state=CameraState.Idle,
-                    state_start_time=datetime.now(),
-                    latest_classification=[],
-                ),
-                door=ModelDoor(
-                    state=DoorState.Closed,
-                    state_start_time=datetime.now(),
-                ),
+    if not is_ready:
+        return model_new, []
+
+    return (
+        ModelReady(
+            type="ready",
+            camera=ModelCamera(
+                state=CameraState.Idle,
+                state_start_time=datetime.now(),
+                latest_classification=[],
             ),
-            [],
-        )
-    return model_new, []
+            door=ModelDoor(
+                state=DoorState.Closed,
+                state_start_time=datetime.now(),
+            ),
+        ),
+        [],
+    )
 
 
 def _transition_connecting_door(
