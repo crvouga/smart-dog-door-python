@@ -6,5 +6,5 @@ from typing import Iterator
 
 class ImageClassifier(ABC):
     @abstractmethod
-    def classify(self, images: list[Image]) -> Iterator[Classification]:
+    def classify(self, images: list[Image]) -> list[Classification]:
         pass

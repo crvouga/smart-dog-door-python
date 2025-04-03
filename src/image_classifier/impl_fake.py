@@ -5,5 +5,5 @@ from typing import Iterator
 
 
 class FakeImageClassifier(ImageClassifier):
-    def classify(self, images: list[Image]) -> Iterator[Classification]:
-        yield Classification(label="fake", weight=0.5)
+    def classify(self, images: list[Image]) -> list[Classification]:
+        return [Classification(label="fake", weight=0.5)]
