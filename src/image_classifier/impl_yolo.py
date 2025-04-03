@@ -2,6 +2,7 @@ from ultralytics import YOLO  # type: ignore
 from src.image.image import Image
 from .interface import ImageClassifier, Classification
 from enum import Enum
+from typing import Iterator
 
 
 class YoloModelSize(Enum):
@@ -14,6 +15,9 @@ class YoloModelSize(Enum):
     @classmethod
     def to_filename(cls, value: str) -> str:
         return f"./models/yolov8{value}.pt"
+
+
+COCO_DATASET_CLASS_INDICES = {"cat": 15, "dog": 16}
 
 
 class YoloImageClassifier(ImageClassifier):
@@ -32,10 +36,9 @@ class YoloImageClassifier(ImageClassifier):
         filename = YoloModelSize.to_filename(model_size.value)
         self.model = YOLO(filename)
         self.confidence_threshold = confidence_threshold
-        # COCO dataset class indices
-        self.class_indices = {"cat": 15, "dog": 16}
+        self.class_indices = COCO_DATASET_CLASS_INDICES
 
-    def classify(self, images: list[Image]) -> list[Classification]:
+    def classify(self, images: list[Image]) -> Iterator[Classification]:
         """
         Classify the images using YOLOv8.
 
@@ -45,29 +48,35 @@ class YoloImageClassifier(ImageClassifier):
         Returns:
             List of classifications with label and confidence
         """
-        classifications = []
+        return self._classify_images(images)
 
+    def _classify_images(
+        self,
+        images: list[Image],
+    ) -> Iterator[Classification]:
         for image in images:
             results = self.model(
-                source=image.pil_image,
+                source=image.into_pil_image(),
                 conf=self.confidence_threshold,
                 classes=list(self.class_indices.values()),
             )
+            yield from self._classify_image(results=results)
 
-            for result in results:
-                boxes = result.boxes
+    def _classify_image(
+        self,
+        results: list,
+    ) -> Iterator[Classification]:
 
-                for box in boxes:
-                    confidence = float(box.conf[0])
-                    class_id = int(box.cls[0])
+        for result in results:
+            boxes = result.boxes
 
-                    label = next(
-                        (k for k, v in self.class_indices.items() if v == class_id),
-                        "unknown",
-                    )
+            for box in boxes:
+                confidence = float(box.conf[0])
+                class_id = int(box.cls[0])
 
-                    classifications.append(
-                        Classification(label=label, weight=confidence)
-                    )
+                label = next(
+                    (k for k, v in self.class_indices.items() if v == class_id),
+                    "unknown",
+                )
 
-        return classifications
+                yield Classification(label=label, weight=confidence)

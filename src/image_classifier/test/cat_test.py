@@ -1,15 +1,16 @@
 from src.image.image import Image
 from src.image_classifier.classification import Classification
 from src.image_classifier.test.fixture import Fixture
+from typing import Iterator
 
 
-def _assert_cat(results: list[Classification]) -> None:
+def _assert_cat(results: Iterator[Classification]) -> None:
     result = max(results, key=lambda x: x.weight)
 
     assert "cat" in result.label
 
 
-def _assert_not_cat(results: list[Classification]) -> None:
+def _assert_not_cat(results: Iterator[Classification]) -> None:
     result = max(results, key=lambda x: x.weight)
 
     assert "cat" not in result.label
