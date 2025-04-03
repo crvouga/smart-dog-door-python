@@ -6,14 +6,14 @@ default: start
 
 # Run the application
 start:
-	python ./src/main.py
+	python main.py
 
 dev:
-	watchmedo auto-restart --patterns="*.py" --ignore-patterns="*.pyc,__pycache__/*" --recursive  --debounce-interval=1.0 -- python ./src/main.py
+	watchmedo auto-restart --patterns="*.py" --ignore-patterns="*.pyc,__pycache__/*" --recursive  --debounce-interval=1.0 -- python ./main.py
 
 # Run tests
 test:
-	pytest
+	pytest-watch --patterns="*_test.py" --ignore-patterns="*.pyc,__pycache__/*" --recursive --debounce-interval=1.0 -- pytest
 
 # Install dependencies
 install:

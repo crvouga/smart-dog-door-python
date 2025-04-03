@@ -1,11 +1,9 @@
-from image_classifier.interface import ImageClassifier
+from src.image_classifier.impl_fake import ImageClassifierFake
 
 
 def main():
-    image_classifier = ImageClassifier()
+    image_classifier = ImageClassifierFake()
+
+    image_classifier.classify([])
 
     print("Hello, World!")
-
-
-if __name__ == "__main__":
-    main()

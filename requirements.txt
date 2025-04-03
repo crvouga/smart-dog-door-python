@@ -1,4 +1,4 @@
-python_version >= "3.10"
+# python_version >= "3.10"
 pytest>=7.0.0
 pytest-watch>=4.2.0
 flake8>=5.0.0
