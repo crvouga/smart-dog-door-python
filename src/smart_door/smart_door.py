@@ -1,24 +1,24 @@
 from src.image_classifier.interface import ImageClassifier
 from src.library.state_machine import StateMachine
-from .core import init, transition, Effect
+from .core import init, transition
 from .interpret_effect import interpret_effect
-from dataclasses import dataclass
+from .deps import Deps
 
 
-@dataclass
 class SmartDoor:
-    image_classifier: ImageClassifier
+    deps: Deps
 
-    @classmethod
-    def start(cls, smart_door: "SmartDoor") -> None:
-        state_machine = StateMachine(
+    def __init__(self, image_classifier: ImageClassifier) -> None:
+        self.deps = Deps(image_classifier=image_classifier)
+        self.state_machine = StateMachine(
             init=init,
             transition=transition,
             interpret_effect=lambda effect, msg_queue: interpret_effect(
-                smart_door=smart_door,
+                deps=self.deps,
                 effect=effect,
                 msg_queue=msg_queue,
             ),
         )
 
-        state_machine.start()
+    def start(self) -> None:
+        self.state_machine.start()
