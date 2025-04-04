@@ -1,8 +1,8 @@
-from src.image_classifier.build import BuildImageClassifier
+from src.device_camera.impl_fake import FakeDeviceCamera
+from src.device_door.impl_fake import FakeDeviceDoor
+from src.image_classifier.impl_yolo import YoloImageClassifier, YoloModelSize
 from src.library.life_cycle import LifeCycle
 from src.smart_door.smart_door import SmartDoor
-from src.device_camera.build import BuildDeviceCamera
-from src.device_door.build import BuildDeviceDoor
 from src.image_classifier.interface import ImageClassifier
 from src.device_camera.interface import DeviceCamera
 from src.device_door.interface import DeviceDoor
@@ -18,9 +18,14 @@ class DesktopClient(LifeCycle):
 
     def __init__(self, logger: Logger) -> None:
         self._logger = logger.getChild("client_desktop")
-        self._image_classifier = BuildImageClassifier.fake()
-        self._device_door = BuildDeviceDoor.fake()
-        self._device_camera = BuildDeviceCamera.fake()
+
+        self._image_classifier = YoloImageClassifier(model_size=YoloModelSize.LARGE)
+
+        self._device_door = FakeDeviceDoor(logger=self._logger)
+
+        self._device_camera = FakeDeviceCamera(
+            logger=self._logger,
+        )
 
         self._smart_door = SmartDoor(
             image_classifier=self._image_classifier,
