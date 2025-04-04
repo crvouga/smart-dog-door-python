@@ -36,7 +36,7 @@ class StateMachine(Generic[Model, Msg, Effect], LifeCycle):
         self._logger = logger.getChild("state_machine")
 
     def _interpret_effect_thread(self, effect: Effect) -> None:
-        self._logger.debug("Interpreting effect: %s", effect)
+        self._logger.info("Effect: %s", effect)
         thread = threading.Thread(
             target=self._interpret_effect, args=(effect, self._msg_queue)
         )
@@ -44,6 +44,7 @@ class StateMachine(Generic[Model, Msg, Effect], LifeCycle):
         thread.join()
 
     def _run(self) -> None:
+        self._logger.info("Running")
         model, effects = self._init()
 
         self._model = model
@@ -55,14 +56,15 @@ class StateMachine(Generic[Model, Msg, Effect], LifeCycle):
             try:
                 msg = self._msg_queue.get(timeout=0.1)
 
-                self._logger.debug("Received message: %s", msg)
-
                 if msg is None:
                     self._running = False
                     break
 
                 if self._model is not None:
                     model, effects = self._transition(self._model, msg)
+                    self._logger.info(
+                        f"Transition:\n\tmodel={self._model.__dict__}\n\tmsg={msg.__dict__}\n\tnew_model={model.__dict__}\n\teffects=[{', '.join(str(effect.__dict__) for effect in effects)}]"
+                    )
                     self._model = model
 
                     for effect in effects:
@@ -71,7 +73,9 @@ class StateMachine(Generic[Model, Msg, Effect], LifeCycle):
                 continue
 
     def start(self) -> None:
+        self._logger.info("Starting")
         if self._thread is not None and self._thread.is_alive():
+            self._logger.info("Already started")
             return
 
         self._running = True
@@ -79,8 +83,12 @@ class StateMachine(Generic[Model, Msg, Effect], LifeCycle):
         self._thread.daemon = True
         self._thread.start()
 
+        self._logger.info("Started")
+
     def stop(self) -> None:
+        self._logger.info("Stopping")
         if not self._running:
+            self._logger.info("Already stopped")
             return
 
         self._running = False
@@ -88,3 +96,5 @@ class StateMachine(Generic[Model, Msg, Effect], LifeCycle):
         if self._thread is not None:
             self._thread.join()
             self._thread = None
+
+        self._logger.info("Stopped")

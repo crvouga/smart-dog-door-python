@@ -9,6 +9,9 @@ class ConnectionState(Enum):
     Connecting = auto()
     Connected = auto()
 
+    def __repr__(self) -> str:
+        return self.name
+
 
 @dataclass
 class ModelConnecting:
@@ -21,6 +24,9 @@ class CameraState(Enum):
     Idle = auto()
     Capturing = auto()
     Classifying = auto()
+
+    def __repr__(self) -> str:
+        return self.name
 
 
 @dataclass
@@ -35,6 +41,9 @@ class DoorState(Enum):
     WillClose = auto()
     Open = auto()
     WillOpen = auto()
+
+    def __repr__(self) -> str:
+        return self.name
 
 
 @dataclass
