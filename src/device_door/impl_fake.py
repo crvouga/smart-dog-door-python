@@ -16,6 +16,6 @@ class FakeDeviceDoor(DeviceDoor):
         self._is_open = False
 
     def events(self) -> Sub[EventDoor]:
-        pub_sub = PubSub()
+        pub_sub = PubSub[EventDoor]()
 
         return pub_sub

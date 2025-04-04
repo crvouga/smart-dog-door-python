@@ -63,10 +63,10 @@ def _transition_connecting_door(
     if not isinstance(msg, MsgDoorEvent):
         return connection_state
 
-    if isinstance(msg.event, EventDoorConnected):
+    if isinstance(msg.door_event, EventDoorConnected):
         return ConnectionState.Connected
 
-    if isinstance(msg.event, EventDoorDisconnected):
+    if isinstance(msg.door_event, EventDoorDisconnected):
         return ConnectionState.Connecting
 
     return connection_state
@@ -78,10 +78,10 @@ def _transition_connecting_camera(
     if not isinstance(msg, MsgCameraEvent):
         return connection_state
 
-    if isinstance(msg.event, EventCameraConnected):
+    if isinstance(msg.camera_event, EventCameraConnected):
         return ConnectionState.Connected
 
-    if isinstance(msg.event, EventCameraDisconnected):
+    if isinstance(msg.camera_event, EventCameraDisconnected):
         return ConnectionState.Connecting
 
     return connection_state

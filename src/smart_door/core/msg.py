@@ -5,48 +5,45 @@ from src.image_classifier.classification import Classification
 from src.image.image import Image
 from src.device_camera.event import EventCamera
 from src.device_door.event import EventDoor
-from src.library.result import Result
 
 
 @dataclass
 class MsgTick:
-    time: datetime
+    now: datetime
     type: Literal["tick"] = "tick"
 
 
 @dataclass
 class MsgCameraEvent:
-    event: EventCamera
+    camera_event: EventCamera
     type: Literal["camera_event"] = "camera_event"
 
 
 @dataclass
 class MsgDoorEvent:
-    event: EventDoor
+    door_event: EventDoor
     type: Literal["door_event"] = "door_event"
 
 
 @dataclass
 class MsgDoorCloseDone:
-    result: Result[None, Exception]
     type: Literal["door_close_done"] = "door_close_done"
 
 
 @dataclass
 class MsgDoorOpenDone:
-    result: Result[None, Exception]
     type: Literal["door_open_done"] = "door_open_done"
 
 
 @dataclass
 class MsgFramesCaptureDone:
-    result: Result[list[Image], Exception]
+    images: list[Image]
     type: Literal["frames_capture_done"] = "frames_capture_done"
 
 
 @dataclass
 class MsgFramesClassifyDone:
-    result: Result[list[Classification], Exception]
+    classifications: list[Classification]
     type: Literal["frames_classify_done"] = "frames_classify_done"
 
 

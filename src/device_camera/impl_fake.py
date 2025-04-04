@@ -13,6 +13,6 @@ class FakeDeviceCamera(DeviceCamera):
         return []
 
     def events(self) -> Sub[EventCamera]:
-        pub_sub = PubSub()
+        pub_sub = PubSub[EventCamera]()
 
         return pub_sub

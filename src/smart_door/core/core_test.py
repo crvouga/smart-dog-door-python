@@ -34,12 +34,12 @@ def test_transition_to_ready_state() -> None:
 
     model, _ = transition(
         model=model,
-        msg=MsgCameraEvent(event=EventCameraConnected()),
+        msg=MsgCameraEvent(camera_event=EventCameraConnected()),
     )
 
     model, _ = transition(
         model=model,
-        msg=MsgDoorEvent(event=EventDoorConnected()),
+        msg=MsgDoorEvent(door_event=EventDoorConnected()),
     )
 
     assert isinstance(model, ModelReady)
