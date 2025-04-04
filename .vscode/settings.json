@@ -41,6 +41,7 @@
     "tqdm",
     "tzdata",
     "ultralytics",
+    "unsub",
     "urllib",
     "watchmedo",
     "yolov",

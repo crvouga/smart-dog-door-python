@@ -1,5 +1,4 @@
-import time
-from datetime import datetime
+from src.device_camera.event import EventCamera
 from .core import (
     Effect,
     Msg,
@@ -18,12 +17,9 @@ from .core import (
     MsgDoorEvent,
     MsgCameraEvent,
 )
-from src.library.result import attempt, Ok, Err
 import queue
 from .deps import Deps
 from src.library.time import ticks
-from src.device_camera.event import EventCameraConnected, EventCameraDisconnected
-from src.device_door.event import EventDoorConnected, EventDoorDisconnected
 
 
 def interpret_effect(deps: Deps, effect: Effect, msg_queue: queue.Queue[Msg]) -> None:
