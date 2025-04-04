@@ -1,5 +1,5 @@
 from src.image_classifier.impl_fake import FakeImageClassifier
-from src.image_classifier.impl_yolo import YoloImageClassifier
+from src.image_classifier.impl_yolo import YoloImageClassifier, YoloModelSize
 from src.image_classifier.interface import ImageClassifier
 
 
@@ -8,4 +8,7 @@ class Fixture:
 
     def __init__(self) -> None:
         self.image_classifier = FakeImageClassifier()
-        self.image_classifier = YoloImageClassifier()
+        self.image_classifier = YoloImageClassifier(
+            model_size=YoloModelSize.EXTRA_LARGE,
+            confidence_threshold=0.25,
+        )
