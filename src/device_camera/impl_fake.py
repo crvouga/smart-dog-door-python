@@ -16,3 +16,9 @@ class FakeDeviceCamera(DeviceCamera):
         pub_sub = PubSub[EventCamera]()
 
         return pub_sub
+
+    def start(self) -> None:
+        pass
+
+    def stop(self) -> None:
+        pass

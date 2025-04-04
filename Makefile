@@ -1,19 +1,16 @@
 # Python project Makefile
-.PHONY: run test install lint clean develop version-check
+.PHONY: run test install lint clean develop
 
 PYTHON_MIN_VERSION = 3.10
 PYTHON_VERSION := $(shell python -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
 
-# Version check target
-version-check:
-	@echo "Checking Python version..."
-	@python -c "import sys; min_ver='$(PYTHON_MIN_VERSION)'; cur_ver=f'{sys.version_info.major}.{sys.version_info.minor}'; exit(0 if float(cur_ver) >= float(min_ver) else print(f'Error: Python {min_ver}+ required, but {cur_ver} found') or 1)"
 
 # Default target executed when no arguments are given to make
 default: start
 
 # Run the application
 start:
+	clear
 	python main.py
 
 dev:

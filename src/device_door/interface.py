@@ -1,9 +1,10 @@
 from abc import ABC, abstractmethod
+from src.library.life_cycle import LifeCycle
 from src.library.pub_sub import Sub
 from .event import EventDoor
 
 
-class DeviceDoor(ABC):
+class DeviceDoor(LifeCycle, ABC):
     @abstractmethod
     def open(self) -> None:
         pass

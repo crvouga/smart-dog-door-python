@@ -19,3 +19,9 @@ class FakeDeviceDoor(DeviceDoor):
         pub_sub = PubSub[EventDoor]()
 
         return pub_sub
+
+    def start(self) -> None:
+        pass
+
+    def stop(self) -> None:
+        pass
