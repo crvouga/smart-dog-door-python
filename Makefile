@@ -21,16 +21,18 @@ dev:
 
 # Run tests
 test:
+	clear
 	pytest
 
 # Run type checking
 tc:
+	clear
 	mypy .
 
 check:
 	clear
-	make tc
-	make test
+	mypy .
+	pytest
 
 # Install dependencies
 install:
