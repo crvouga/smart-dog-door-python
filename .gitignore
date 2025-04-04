@@ -40,3 +40,6 @@ htmlcov/
 # Misc
 .DS_Store
 *.log
+
+
+assets/models
