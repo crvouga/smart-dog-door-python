@@ -17,13 +17,14 @@ class YoloModelSize(Enum):
 
 
 COCO_DATASET_CLASS_INDICES = {"cat": 15, "dog": 16}
+DEFAULT_CONFIDENCE_THRESHOLD = 0.5
 
 
 class YoloImageClassifier(ImageClassifier):
     def __init__(
         self,
         model_size: YoloModelSize,
-        confidence_threshold: float,
+        confidence_threshold: float = DEFAULT_CONFIDENCE_THRESHOLD,
     ) -> None:
         self._model = YOLO(model_size.to_filename())
         self._confidence_threshold = confidence_threshold
