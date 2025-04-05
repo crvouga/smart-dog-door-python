@@ -29,7 +29,8 @@ class WindowDebug(QMainWindow):
         self.setWindowTitle("Debug Window")
         WIDTH = 800
         HEIGHT = 600
-        self.setMinimumSize(WIDTH, HEIGHT)
+        self.setMinimumSize(0, 0)
+        self.resize(WIDTH, HEIGHT)
 
     def _setup_background(self) -> None:
         palette = self.palette()
