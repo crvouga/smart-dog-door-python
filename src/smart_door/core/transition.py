@@ -108,4 +108,18 @@ def _transition_connecting_camera(
 
 
 def _transition_ready(model: ModelReady, msg: Msg) -> tuple[Model, list[Effect]]:
+    camera, effects = _transition_ready_camera(camera=model.camera, msg=msg)
+
     return model, []
+
+
+def _transition_ready_camera(
+    camera: ModelCamera, msg: Msg
+) -> tuple[ModelCamera, list[Effect]]:
+    if not isinstance(msg, MsgCameraEvent):
+        return camera, []
+
+    if isinstance(msg.camera_event, EventCameraConnected):
+        return camera, []
+
+    return camera, []

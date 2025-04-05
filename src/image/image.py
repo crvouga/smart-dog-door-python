@@ -28,6 +28,12 @@ class Image:
             self._array = np.zeros((1, 1, 3), dtype=np.uint8)
 
     @classmethod
+    def from_np_array(cls, data: np.ndarray) -> "Image":
+        image = cls()
+        image._array = data
+        return image
+
+    @classmethod
     def from_file(cls, path: str) -> "Image":
         image = cls()
         image._path = path

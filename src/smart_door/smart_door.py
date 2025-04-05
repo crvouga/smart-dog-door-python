@@ -13,8 +13,8 @@ from .deps import Deps
 
 
 class SmartDoor(LifeCycle):
-    deps: Deps
-    _resources: list[LifeCycle]
+    _deps: Deps
+    _state_machine: StateMachine
 
     def __init__(
         self,
@@ -23,37 +23,29 @@ class SmartDoor(LifeCycle):
         device_door: DeviceDoor,
         logger: Logger,
     ) -> None:
-        self.deps = Deps(
+        self._deps = Deps(
             image_classifier=image_classifier,
             device_camera=device_camera,
             device_door=device_door,
             logger=logger.getChild("smart_door"),
         )
 
-        self.state_machine = StateMachine(
+        self._state_machine = StateMachine(
             init=init,
             transition=transition,
             interpret_effect=self._interpret_effect,
-            logger=self.deps.logger,
+            logger=self._deps.logger,
         )
 
-        self._resources = [
-            self.deps.device_camera,
-            self.deps.device_door,
-            self.state_machine,
-        ]
-
     def _interpret_effect(self, effect: Effect, msg_queue: queue.Queue[Msg]) -> None:
-        interpret_effect(deps=self.deps, effect=effect, msg_queue=msg_queue)
+        interpret_effect(deps=self._deps, effect=effect, msg_queue=msg_queue)
 
     def start(self) -> None:
-        self.deps.logger.info("Starting")
-        for resource in self._resources:
-            resource.start()
-        self.deps.logger.info("Started")
+        self._deps.logger.info("Starting")
+        self._state_machine.start()
+        self._deps.logger.info("Started")
 
     def stop(self) -> None:
-        self.deps.logger.info("Stopping")
-        for resource in reversed(self._resources):
-            resource.stop()
-        self.deps.logger.info("Stopped")
+        self._deps.logger.info("Stopping")
+        self._state_machine.stop()
+        self._deps.logger.info("Stopped")

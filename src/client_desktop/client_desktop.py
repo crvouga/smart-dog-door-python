@@ -1,5 +1,4 @@
 from src.client_desktop.gui import Gui
-from src.device_camera.impl_fake import FakeDeviceCamera
 from src.device_camera.impl_usb import UsbDeviceCamera
 from src.device_door.impl_fake import FakeDeviceDoor
 from src.image_classifier.impl_yolo import YoloImageClassifier, YoloModelSize
@@ -23,27 +22,31 @@ class DesktopClient(LifeCycle):
     def __init__(self, logger: Logger) -> None:
         self._logger = logger.getChild("client_desktop")
 
-        image_classifier = YoloImageClassifier(model_size=YoloModelSize.LARGE)
+        self._image_classifier = YoloImageClassifier(model_size=YoloModelSize.LARGE)
 
-        device_door = FakeDeviceDoor(logger=self._logger)
+        self._device_door = FakeDeviceDoor(logger=self._logger)
 
-        device_camera = FakeDeviceCamera(
+        self._device_camera: DeviceCamera = UsbDeviceCamera(
+            logger=self._logger, device_id=0
+        )
+
+        self._smart_door = SmartDoor(
+            image_classifier=self._image_classifier,
+            device_camera=self._device_camera,
+            device_door=self._device_door,
             logger=self._logger,
         )
 
-        device_camera = UsbDeviceCamera(logger=self._logger, device_id=0)
-
-        self._gui = Gui(logger=self._logger, device_camera=device_camera)
-
-        self._smart_door = SmartDoor(
-            image_classifier=image_classifier,
-            device_camera=device_camera,
-            device_door=device_door,
+        self._gui = Gui(
             logger=self._logger,
+            device_camera=self._device_camera,
+            smart_door=self._smart_door,
         )
 
     def start(self) -> None:
         self._logger.info("Starting")
+        self._device_door.start()
+        self._device_camera.start()
         self._smart_door.start()
         self._gui.start()
         self._logger.info("Started")
@@ -52,4 +55,6 @@ class DesktopClient(LifeCycle):
         self._logger.info("Stopping")
         self._gui.stop()
         self._smart_door.stop()
+        self._device_camera.stop()
+        self._device_door.stop()
         self._logger.info("Stopped")

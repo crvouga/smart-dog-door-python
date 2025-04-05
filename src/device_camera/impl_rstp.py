@@ -12,7 +12,6 @@ from .event import (
     EventCamera,
     EventCameraConnected,
     EventCameraDisconnected,
-    EventCameraError,
 )
 
 
@@ -154,11 +153,7 @@ class RstpDeviceCamera(DeviceCamera):
                         if self._connected:
                             self._connected = False
                             self._publish_event(EventCameraDisconnected())
-                            self._publish_event(
-                                EventCameraError(
-                                    reason="Stream disconnected or read error"
-                                )
-                            )
+
                     time.sleep(reconnect_delay_seconds)  # Wait before reconnect attempt
 
             except Exception as e:
@@ -176,7 +171,7 @@ class RstpDeviceCamera(DeviceCamera):
                     if self._connected:
                         self._connected = False
                         self._publish_event(EventCameraDisconnected())
-                        self._publish_event(EventCameraError(reason=f"Exception: {e}"))
+
                 time.sleep(reconnect_delay_seconds)  # Wait before reconnect attempt
 
     def capture(self) -> List[Image]:
@@ -189,7 +184,7 @@ class RstpDeviceCamera(DeviceCamera):
 
         if frame_data is not None:
             # Assuming Image constructor takes numpy array
-            return [Image(np_array=frame_data)]
+            return [Image.from_np_array(frame_data)]
         else:
             # Not connected or no frame received yet
             # self._logger.debug("Capture called but no frame available.")
