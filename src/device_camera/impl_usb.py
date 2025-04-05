@@ -131,6 +131,10 @@ class UsbDeviceCamera(DeviceCamera):
                         time.sleep(reconnect_delay_seconds)
                         continue
 
+                if not self._cap:
+                    time.sleep(reconnect_delay_seconds)
+                    continue
+
                 ret, frame = self._cap.read()
                 if not ret:
                     self._logger.warning("Failed to read frame from camera")

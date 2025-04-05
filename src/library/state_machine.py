@@ -19,7 +19,7 @@ class StateMachine(Generic[Model, Msg, Effect], LifeCycle):
     _running: bool
     _thread: Optional[threading.Thread]
     _logger: logging.Logger
-    _models: Sub[Model]
+    _models: PubSub[Model]
 
     def __init__(
         self,
