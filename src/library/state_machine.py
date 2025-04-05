@@ -20,6 +20,7 @@ class StateMachine(Generic[Model, Msg, Effect], LifeCycle):
     _thread: Optional[threading.Thread]
     _logger: logging.Logger
     _models: PubSub[Model]
+    _should_log: bool
 
     def __init__(
         self,
@@ -27,6 +28,7 @@ class StateMachine(Generic[Model, Msg, Effect], LifeCycle):
         transition: Callable[[Model, Msg], tuple[Model, List[Effect]]],
         interpret_effect: Callable[[Effect, queue.Queue[Msg]], None],
         logger: logging.Logger,
+        should_log: bool = False,
     ) -> None:
         self._init = init
         self._transition = transition
@@ -37,6 +39,7 @@ class StateMachine(Generic[Model, Msg, Effect], LifeCycle):
         self._running = False
         self._thread = None
         self._logger = logger.getChild("state_machine")
+        self._should_log = should_log
 
     def _interpret_effect_thread(self, effect: Effect) -> None:
         self._logger.info("Effect: %s", effect)
@@ -77,9 +80,10 @@ class StateMachine(Generic[Model, Msg, Effect], LifeCycle):
 
                 model, effects = self._transition(self._model, msg)
 
-                self._logger.info(
-                    f"Transition:\n\tmodel={self._model.__dict__}\n\tmsg={msg.__dict__}\n\tnew_model={model.__dict__}\n\teffects=[{', '.join(str(effect.__dict__) for effect in effects)}]"
-                )
+                if self._should_log:
+                    self._logger.info(
+                        f"Transition:\n\tmodel={self._model.__dict__}\n\tmsg={msg.__dict__}\n\tnew_model={model.__dict__}\n\teffects=[{', '.join(str(effect.__dict__) for effect in effects)}]"
+                    )
                 self._handle_output(model, effects)
 
             except queue.Empty:

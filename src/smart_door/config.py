@@ -5,8 +5,8 @@ from src.image_classifier.classification_config import ClassificationConfig
 
 @dataclass
 class Config:
-    tick_rate: timedelta = timedelta(seconds=1)
-    minimal_rate_camera_process: timedelta = timedelta(seconds=1)
+    tick_rate: timedelta = timedelta(seconds=0.1)
+    minimal_rate_camera_process: timedelta = timedelta(seconds=0.1)
     minimal_duration_will_open: timedelta = timedelta(seconds=1)
     minimal_duration_will_close: timedelta = timedelta(seconds=1)
     classification_close_list: list[ClassificationConfig] = field(

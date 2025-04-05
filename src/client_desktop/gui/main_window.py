@@ -1,10 +1,7 @@
-from dataclasses import asdict
-import pprint
 from PySide6.QtWidgets import (  # type: ignore
     QMainWindow,
     QWidget,
     QVBoxLayout,
-    QLabel,
 )
 from PySide6.QtCore import Qt  # type: ignore
 from PySide6.QtGui import QPalette, QColor  # type: ignore
@@ -19,7 +16,6 @@ class MainWindow(QMainWindow):
     _smart_door: SmartDoor
     _main_layout: QVBoxLayout
     _camera_feed: CameraFeedWidget
-    _model_label: QLabel
 
     def __init__(self, device_camera: DeviceCamera, smart_door: SmartDoor):
         super().__init__()
@@ -29,7 +25,6 @@ class MainWindow(QMainWindow):
         self._setup_background()
         self._setup_layout()
         self._setup_camera_feed()
-        self._setup_model()
 
     def _setup_window(self) -> None:
         self.setWindowTitle("Image Classifier")
@@ -73,15 +68,3 @@ class MainWindow(QMainWindow):
             )
 
         self._smart_door.models().sub(_set_classifications)
-
-    def _setup_model(self) -> None:
-        self._model_label = QLabel("Model")
-        self._model_label.setStyleSheet("color: white; font-size: 16px;")
-        self._model_label.setAlignment(Qt.AlignLeft)
-        self._main_layout.addWidget(self._model_label)
-
-        def _set_model_label(model: Model):
-            print(f"Setting model label for {model}")
-            self._model_label.setText(pprint.pformat(asdict(model), indent=2, width=80))
-
-        self._smart_door.models().sub(_set_model_label)
