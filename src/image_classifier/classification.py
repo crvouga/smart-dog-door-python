@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from src.library.bounding_box import BoundingBox
+from src.image_classifier.bounding_box import BoundingBox
 
 
 @dataclass

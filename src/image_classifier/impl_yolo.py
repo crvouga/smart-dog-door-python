@@ -1,6 +1,6 @@
 from ultralytics import YOLO  # type: ignore
 from src.image.image import Image
-from src.library.bounding_box import BoundingBox
+from src.image_classifier.bounding_box import BoundingBox
 from .interface import ImageClassifier, Classification
 from enum import Enum
 from typing import Iterator
