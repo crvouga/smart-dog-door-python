@@ -14,13 +14,15 @@ from src.smart_door.core.test.fixture import Fixture
 def test_transition_camera_to_capturing_state() -> None:
     f = Fixture()
 
-    model, _ = f.t.init()
+    model, _ = f.init()
 
     model = f.transition_to_ready_state(model=model)
 
-    model, effects = f.t.transition(
+    model, effects = f.transition(
         model=model,
-        msg=MsgTick(happened_at=datetime.now() + f.config.minimal_rate_camera_process),
+        msg=MsgTick(
+            happened_at=datetime.now() + model.config.minimal_rate_camera_process
+        ),
     )
 
     assert isinstance(model, ModelReady)
@@ -32,15 +34,15 @@ def test_transition_camera_to_capturing_state() -> None:
 def test_do_not_transition_to_capturing_state_if_not_enough_time_has_passed() -> None:
     f = Fixture()
 
-    model, _ = f.t.init()
+    model, _ = f.init()
 
     model = f.transition_to_ready_state(model=model)
 
-    model, _ = f.t.transition(
+    model, _ = f.transition(
         model=model,
         msg=MsgTick(
             happened_at=datetime.now()
-            + f.config.minimal_rate_camera_process
+            + model.config.minimal_rate_camera_process
             - timedelta(seconds=1)
         ),
     )
@@ -52,19 +54,21 @@ def test_do_not_transition_to_capturing_state_if_not_enough_time_has_passed() ->
 def test_transition_to_classifying_state_after_capturing_image() -> None:
     f = Fixture()
 
-    model, _ = f.t.init()
+    model, _ = f.init()
 
     model = f.transition_to_ready_state(model=model)
 
-    model, _ = f.t.transition(
+    model, _ = f.transition(
         model=model,
-        msg=MsgTick(happened_at=datetime.now() + f.config.minimal_rate_camera_process),
+        msg=MsgTick(
+            happened_at=datetime.now() + model.config.minimal_rate_camera_process
+        ),
     )
 
     assert isinstance(model, ModelReady)
     assert model.camera.state == CameraState.Capturing
 
-    model, effects = f.t.transition(
+    model, effects = f.transition(
         model=model, msg=MsgImageCaptureDone(images=f.device_camera.capture())
     )
 
@@ -78,20 +82,22 @@ def test_transition_to_classifying_state_after_capturing_image() -> None:
 def test_transition_to_idle_state_after_classifying_image() -> None:
     f = Fixture()
 
-    model, _ = f.t.init()
+    model, _ = f.init()
 
     model = f.transition_to_ready_state(model=model)
 
-    model, _ = f.t.transition(
+    model, _ = f.transition(
         model=model,
-        msg=MsgTick(happened_at=datetime.now() + f.config.minimal_rate_camera_process),
+        msg=MsgTick(
+            happened_at=datetime.now() + model.config.minimal_rate_camera_process
+        ),
     )
 
     images = f.device_camera.capture()
 
-    model, _ = f.t.transition(model=model, msg=MsgImageCaptureDone(images=images))
+    model, _ = f.transition(model=model, msg=MsgImageCaptureDone(images=images))
 
-    model, _ = f.t.transition(
+    model, _ = f.transition(
         model=model,
         msg=MsgImageClassifyDone(
             classifications=f.image_classifier.classify(images=images)

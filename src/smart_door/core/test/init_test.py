@@ -10,7 +10,7 @@ from src.smart_door.core.test.fixture import Fixture
 def test_init() -> None:
     f = Fixture()
 
-    model, effects = f.t.init()
+    model, effects = f.init()
 
     assert model.type == "connecting"
     assert model.camera == ConnectionState.Connecting
