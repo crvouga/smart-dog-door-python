@@ -33,6 +33,8 @@
     "pyparsing",
     "pytest",
     "pytz",
+    "Rstp",
+    "RTSP",
     "scipy",
     "seaborn",
     "sympy",
