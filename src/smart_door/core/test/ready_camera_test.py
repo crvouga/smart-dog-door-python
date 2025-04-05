@@ -1,8 +1,10 @@
 from datetime import datetime, timedelta
 from src.smart_door.core import (
     EffectCaptureImage,
+    EffectClassifyImages,
     CameraState,
     ModelReady,
+    MsgImageCaptureDone,
 )
 from src.smart_door.core.msg import MsgTick
 from src.smart_door.core.test.fixture import Fixture
@@ -44,3 +46,28 @@ def test_do_not_transition_to_capturing_state_if_not_enough_time_has_passed() ->
 
     assert isinstance(model, ModelReady)
     assert model.camera.state == CameraState.Idle
+
+
+def test_transition_to_classifying_state_after_capturing_image() -> None:
+    f = Fixture()
+
+    model, _ = f.t.init()
+
+    model = f.transition_to_ready_state(model=model)
+
+    model, _ = f.t.transition(
+        model=model,
+        msg=MsgTick(happened_at=datetime.now() + f.config.minimal_rate_camera_process),
+    )
+
+    assert model.camera.state == CameraState.Capturing
+
+    model, effects = f.t.transition(
+        model=model, msg=MsgImageCaptureDone(images=f.device_camera.capture())
+    )
+
+    assert isinstance(model, ModelReady)
+    assert len(effects) == 1
+    assert isinstance(effects[0], EffectClassifyImages)
+
+    assert model.camera.state == CameraState.Classifying

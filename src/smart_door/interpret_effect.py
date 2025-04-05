@@ -9,8 +9,8 @@ from .core import (
     EffectSubscribeTick,
     EffectOpenDoor,
     EffectCloseDoor,
-    MsgFramesCaptureDone,
-    MsgFramesClassifyDone,
+    MsgImageCaptureDone,
+    MsgImageClassifyDone,
     MsgDoorOpenDone,
     MsgDoorCloseDone,
     MsgTick,
@@ -42,11 +42,11 @@ def interpret_effect(deps: Deps, effect: Effect, msg_queue: queue.Queue[Msg]) ->
 
     if isinstance(effect, EffectCaptureImage):
         images = deps.device_camera.capture()
-        msg_queue.put(MsgFramesCaptureDone(images=images))
+        msg_queue.put(MsgImageCaptureDone(images=images))
 
     if isinstance(effect, EffectClassifyImages):
         classifications = deps.image_classifier.classify(images=effect.images)
-        msg_queue.put(MsgFramesClassifyDone(classifications=classifications))
+        msg_queue.put(MsgImageClassifyDone(classifications=classifications))
 
     if isinstance(effect, EffectOpenDoor):
         deps.device_door.open()

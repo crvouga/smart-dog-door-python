@@ -40,15 +40,15 @@ class MsgDoorOpenDone(_MsgBase):
 
 
 @dataclass
-class MsgFramesCaptureDone(_MsgBase):
+class MsgImageCaptureDone(_MsgBase):
     images: list[Image] = field(default_factory=list)
-    type: Literal["frames_capture_done"] = "frames_capture_done"
+    type: Literal["image_capture_done"] = "image_capture_done"
 
 
 @dataclass
-class MsgFramesClassifyDone(_MsgBase):
+class MsgImageClassifyDone(_MsgBase):
     classifications: list[Classification] = field(default_factory=list)
-    type: Literal["frames_classify_done"] = "frames_classify_done"
+    type: Literal["image_classify_done"] = "image_classify_done"
 
 
 Msg = Union[
@@ -57,6 +57,6 @@ Msg = Union[
     MsgDoorEvent,
     MsgDoorCloseDone,
     MsgDoorOpenDone,
-    MsgFramesCaptureDone,
-    MsgFramesClassifyDone,
+    MsgImageCaptureDone,
+    MsgImageClassifyDone,
 ]

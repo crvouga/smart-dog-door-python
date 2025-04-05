@@ -1,3 +1,5 @@
+from logging import Logger
+from src.device_camera.impl_fake import FakeDeviceCamera
 from src.smart_door.config import Config
 from src.smart_door.core import (
     Transition,
@@ -14,7 +16,9 @@ from src.smart_door.core.model import Model
 class Fixture:
     def __init__(self) -> None:
         self.config = Config()
+        self.logger = Logger("test")
         self.t = Transition(config=self.config)
+        self.device_camera = FakeDeviceCamera(logger=self.logger)
 
     def transition_to_ready_state(self, model: Model) -> ModelReady:
         model, _ = self.t.transition(
