@@ -13,9 +13,8 @@ class Main:
         self._logger = logger.getChild("main")
         self._resources = []
 
-        self._resources.append(ConsoleClient(logger=self._logger))
-        if False:
-            self._resources.append(DesktopClient(logger=self._logger))
+        # self._resources.append(ConsoleClient(logger=self._logger))
+        self._resources.append(DesktopClient(logger=self._logger))
 
     def start(self) -> None:
         for resource in self._resources:

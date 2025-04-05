@@ -56,3 +56,6 @@ ultralytics-thop==2.0.14
 urllib3==1.26.18
 watchdog==6.0.0
 zipp==3.21.0
+PySide6==6.9.0
+PySide6_Addons==6.9.0
+PySide6_Essentials==6.9.0

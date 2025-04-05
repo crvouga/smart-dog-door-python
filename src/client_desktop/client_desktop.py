@@ -1,3 +1,4 @@
+from src.client_desktop.gui import Gui
 from src.device_camera.impl_fake import FakeDeviceCamera
 from src.device_door.impl_fake import FakeDeviceDoor
 from src.image_classifier.impl_yolo import YoloImageClassifier, YoloModelSize
@@ -15,6 +16,7 @@ class DesktopClient(LifeCycle):
     _device_door: DeviceDoor
     _device_camera: DeviceCamera
     _smart_door: SmartDoor
+    _resources: list[LifeCycle]
 
     def __init__(self, logger: Logger) -> None:
         self._logger = logger.getChild("client_desktop")
@@ -27,6 +29,8 @@ class DesktopClient(LifeCycle):
             logger=self._logger,
         )
 
+        self._gui = Gui(logger=self._logger)
+
         self._smart_door = SmartDoor(
             image_classifier=self._image_classifier,
             device_camera=self._device_camera,
@@ -34,12 +38,19 @@ class DesktopClient(LifeCycle):
             logger=self._logger,
         )
 
+        self._resources = [
+            self._smart_door,
+            self._gui,
+        ]
+
     def start(self) -> None:
         self._logger.info("Starting desktop client")
-        self._smart_door.start()
+        for resource in self._resources:
+            resource.start()
         self._logger.info("Desktop client started")
 
     def stop(self) -> None:
         self._logger.info("Stopping desktop client")
-        self._smart_door.stop()
+        for resource in reversed(self._resources):
+            resource.stop()
         self._logger.info("Desktop client stopped")
