@@ -7,26 +7,35 @@ from src.device_camera.interface import DeviceCamera
 class CameraWorker(QObject):
     image_ready = Signal(QImage)
 
-    def __init__(self, device_camera: DeviceCamera):
+    def __init__(self, device_camera: DeviceCamera, fps: int):
         super().__init__()
         self._device_camera = device_camera
         self._running = True
+        self._timer = QTimer()
+        self._timer.timeout.connect(self._capture_frame)
+        interval = int(1000 / fps)  # Convert fps to milliseconds
+        self._timer.start(interval)
+
+    def _capture_frame(self):
+        if not self._running:
+            return
+        image = self._device_camera.capture()
+        if image:
+            image = image[0]
+            image = image.np_array
+            height, width, _ = image.shape
+            bytes_per_line = 3 * width
+            q_image = QImage(
+                image.data, width, height, bytes_per_line, QImage.Format_RGB888
+            )
+            self.image_ready.emit(q_image)
 
     def process(self):
-        while self._running:
-            image = self._device_camera.capture()
-            if image:
-                image = image[0]
-                image = image.np_array
-                height, width, _ = image.shape
-                bytes_per_line = 3 * width
-                q_image = QImage(
-                    image.data, width, height, bytes_per_line, QImage.Format_RGB888
-                )
-                self.image_ready.emit(q_image)
+        pass  # Timer handles the frame capture
 
     def stop(self):
         self._running = False
+        self._timer.stop()
 
 
 class CameraFeedWidget(QWidget):
@@ -42,6 +51,7 @@ class CameraFeedWidget(QWidget):
         y: int,
         width: int,
         height: int,
+        fps: int,
     ):
         super().__init__()
         self._device_camera = device_camera
@@ -55,7 +65,7 @@ class CameraFeedWidget(QWidget):
         layout.addWidget(self._feed_label)
 
         self._thread = QThread()
-        self._worker = CameraWorker(device_camera)
+        self._worker = CameraWorker(device_camera, fps)
         self._worker.moveToThread(self._thread)
         self._thread.started.connect(self._worker.process)
         self._worker.image_ready.connect(self._update_feed)
