@@ -59,7 +59,6 @@ class WindowMain(QMainWindow):
         self._main_layout.addWidget(self._camera_feed)
 
         def _set_classifications(model: Model):
-            print(f"Setting classifications for {model}")
             if not isinstance(model, ModelReady):
                 return
 

@@ -22,12 +22,14 @@ class DesktopClient(LifeCycle):
     def __init__(self, logger: Logger) -> None:
         self._logger = logger.getChild("client_desktop")
 
-        self._image_classifier = YoloImageClassifier(model_size=YoloModelSize.LARGE)
+        self._image_classifier = YoloImageClassifier(
+            model_size=YoloModelSize.EXTRA_LARGE
+        )
 
         self._device_door = FakeDeviceDoor(logger=self._logger)
 
         self._device_camera: DeviceCamera = UsbDeviceCamera(
-            logger=self._logger, device_id=0
+            logger=self._logger, device_id=1
         )
 
         self._smart_door = SmartDoor(

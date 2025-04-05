@@ -3,11 +3,17 @@ from src.image_classifier.classification import Classification
 
 
 class PainterClassification:
+    _LABEL_COLORS = {
+        "dog": QColor(0, 255, 0),  # green
+        "cat": QColor(255, 0, 0),  # red
+    }
+
     def __init__(self, painter: QPainter):
         self._painter = painter
         self._setup_painter()
 
     def _setup_painter(self) -> None:
+        # Default color will be used for unknown labels
         pen = QPen(QColor(255, 0, 0))
         pen.setWidth(2)
         self._painter.setPen(pen)
@@ -23,10 +29,17 @@ class PainterClassification:
         rect_h = int((bbox.y_max - bbox.y_min) * scale_y)
 
         if rect_w > 0 and rect_h > 0:
-            self._draw_bounding_box(rect_x, rect_y, rect_w, rect_h)
+            self._draw_bounding_box(classification, rect_x, rect_y, rect_w, rect_h)
             self._draw_label(classification, rect_x, rect_y)
 
-    def _draw_bounding_box(self, x: int, y: int, width: int, height: int) -> None:
+    def _draw_bounding_box(
+        self, classification: Classification, x: int, y: int, width: int, height: int
+    ) -> None:
+        # Set color based on label
+        color = self._LABEL_COLORS.get(classification.label, QColor(255, 0, 0))
+        pen = QPen(color)
+        pen.setWidth(2)
+        self._painter.setPen(pen)
         self._painter.drawRect(x, y, width, height)
 
     def _draw_label(
