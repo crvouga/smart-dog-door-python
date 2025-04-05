@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from .bounding_box import BoundingBox
+from src.library.bounding_box import BoundingBox
 
 
 @dataclass

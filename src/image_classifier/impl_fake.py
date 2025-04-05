@@ -1,5 +1,5 @@
 from src.image.image import Image
-from src.image_classifier.bounding_box import BoundingBox
+from src.library.bounding_box import BoundingBox
 from src.image_classifier.classification import Classification
 from src.image_classifier.interface import ImageClassifier
 
