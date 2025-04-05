@@ -6,16 +6,16 @@ import sys
 import signal  # Import the signal module
 from src.device_camera.interface import DeviceCamera
 from src.smart_door.smart_door import SmartDoor
-from .main_window import MainWindow
-from .debug_window import DebugWindow
+from .window_main import WindowMain
+from .window_debug import WindowDebug
 from src.library.life_cycle import LifeCycle
 
 
 class Gui(LifeCycle):
     _logger: Logger
     _app: QApplication
-    _window: MainWindow
-    _debug_window: DebugWindow
+    _window: WindowMain
+    _debug_window: WindowDebug
 
     def __init__(
         self, logger: Logger, device_camera: DeviceCamera, smart_door: SmartDoor
@@ -29,8 +29,8 @@ class Gui(LifeCycle):
         else:
             self._app = app_instance  # type: ignore
 
-        self._window = MainWindow(device_camera=device_camera, smart_door=smart_door)
-        self._debug_window = DebugWindow(smart_door=smart_door)
+        self._window = WindowMain(device_camera=device_camera, smart_door=smart_door)
+        self._debug_window = WindowDebug(smart_door=smart_door)
 
         signal.signal(signal.SIGINT, self._signal_handler)
 

@@ -12,7 +12,7 @@ from src.smart_door.smart_door import SmartDoor
 from src.smart_door.core.model import Model
 
 
-class DebugWindow(QMainWindow):
+class WindowDebug(QMainWindow):
     _smart_door: SmartDoor
     _main_layout: QVBoxLayout
     _model_label: QLabel
