@@ -8,7 +8,6 @@ from typing import List
 
 class CameraWorker(QObject):
     image_ready = Signal(QImage)
-    classifications_ready = Signal(List[Classification])
 
     def __init__(self, device_camera: DeviceCamera, fps: int):
         super().__init__()
@@ -22,16 +21,20 @@ class CameraWorker(QObject):
     def _capture_frame(self):
         if not self._running:
             return
+
         image = self._device_camera.capture()
-        if image:
-            image = image[0]
-            image = image.np_array
-            height, width, _ = image.shape
-            bytes_per_line = 3 * width
-            q_image = QImage(
-                image.data, width, height, bytes_per_line, QImage.Format_RGB888
-            )
-            self.image_ready.emit(q_image)
+
+        if not image:
+            return
+
+        image = image[0]
+        image = image.np_array
+        height, width, _ = image.shape
+        bytes_per_line = 3 * width
+        q_image = QImage(
+            image.data, width, height, bytes_per_line, QImage.Format_RGB888
+        )
+        self.image_ready.emit(q_image)
 
     def process(self):
         pass
@@ -81,21 +84,32 @@ class CameraFeedWidget(QWidget):
         self._worker.moveToThread(self._thread)
         self._thread.started.connect(self._worker.process)
         self._worker.image_ready.connect(self._update_feed)
-        self._worker.classifications_ready.connect(self._update_classifications)
         self._thread.start()
-
-    def _update_classifications(self, classifications: List[Classification]) -> None:
-        """Update the stored classifications."""
-        self._classifications = classifications
 
     def _update_feed(self, q_image: QImage):
         """Update the camera feed display with the latest frame and draw bounding boxes."""
-        pixmap = QPixmap.fromImage(q_image)
-        scaled_pixmap = pixmap.scaled(
+        original_pixmap = QPixmap.fromImage(q_image)
+        scaled_pixmap = original_pixmap.scaled(
             self._feed_label.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation
         )
 
-        # Create a painter to draw on the pixmap
+        # Get original and scaled dimensions
+        orig_w = original_pixmap.width()
+        orig_h = original_pixmap.height()
+        scaled_w = scaled_pixmap.width()
+        scaled_h = scaled_pixmap.height()
+
+        if orig_w <= 0 or orig_h <= 0 or scaled_w <= 0 or scaled_h <= 0:
+            self._feed_label.setPixmap(
+                scaled_pixmap
+            )  # Show image even if we can't draw boxes
+            return
+
+        # Calculate scaling factors
+        scale_x = scaled_w / orig_w
+        scale_y = scaled_h / orig_h
+
+        # Create a painter to draw on the scaled pixmap
         painter = QPainter(scaled_pixmap)
         pen = QPen(QColor(255, 0, 0))  # Red color for bounding boxes
         pen.setWidth(2)
@@ -103,18 +117,24 @@ class CameraFeedWidget(QWidget):
 
         for classification in self._classifications:
             bbox = classification.bounding_box
-            x_min = bbox.x_min * scaled_pixmap.width()
-            y_min = bbox.y_min * scaled_pixmap.height()
-            x_max = bbox.x_max * scaled_pixmap.width()
-            y_max = bbox.y_max * scaled_pixmap.height()
 
-            painter.drawRect(
-                int(x_min), int(y_min), int(x_max - x_min), int(y_max - y_min)
-            )
+            # Apply scaling to the absolute coordinates from the classification
+            rect_x = int(bbox.x_min * scale_x)
+            rect_y = int(bbox.y_min * scale_y)
+            rect_w = int((bbox.x_max - bbox.x_min) * scale_x)
+            rect_h = int((bbox.y_max - bbox.y_min) * scale_y)
 
-            # Draw the label and confidence
-            label_text = f"{classification.label} ({classification.weight:.2f})"
-            painter.drawText(int(x_min), int(y_min) - 5, label_text)
+            if rect_w > 0 and rect_h > 0:
+                painter.drawRect(rect_x, rect_y, rect_w, rect_h)
+
+                # Draw the label and confidence
+                label_text = f"{classification.label} ({classification.weight:.2f})"
+                # Adjust text position slightly for visibility
+                text_x = rect_x
+                text_y = (
+                    rect_y - 5 if rect_y > 10 else rect_y + 15
+                )  # Avoid drawing off-screen
+                painter.drawText(text_x, text_y, label_text)
 
         painter.end()
         self._feed_label.setPixmap(scaled_pixmap)
@@ -129,3 +149,10 @@ class CameraFeedWidget(QWidget):
         self._thread.quit()
         self._thread.wait()
         super().closeEvent(event)
+
+    def set_classifications(self, classifications: List[Classification]) -> None:
+        """
+        Updates the classifications to be drawn on the next frame update.
+        This method should be called by the owner/consumer of this widget.
+        """
+        self._classifications = classifications

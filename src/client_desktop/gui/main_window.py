@@ -1,3 +1,4 @@
+from dataclasses import asdict
 import pprint
 from PySide6.QtWidgets import (  # type: ignore
     QMainWindow,
@@ -10,7 +11,7 @@ from PySide6.QtGui import QPalette, QColor  # type: ignore
 from .camera_feed_widget import CameraFeedWidget
 from src.device_camera.interface import DeviceCamera
 from src.smart_door.smart_door import SmartDoor
-from src.smart_door.core.model import Model
+from src.smart_door.core.model import Model, ModelReady
 
 
 class MainWindow(QMainWindow):
@@ -62,12 +63,25 @@ class MainWindow(QMainWindow):
         )
         self._main_layout.addWidget(self._camera_feed)
 
+        def _set_classifications(model: Model):
+            print(f"Setting classifications for {model}")
+            if not isinstance(model, ModelReady):
+                return
+
+            self._camera_feed.set_classifications(
+                classifications=model.camera.latest_classification
+            )
+
+        self._smart_door.models().sub(_set_classifications)
+
     def _setup_model(self) -> None:
         self._model_label = QLabel("Model")
         self._model_label.setStyleSheet("color: white; font-size: 16px;")
         self._model_label.setAlignment(Qt.AlignLeft)
         self._main_layout.addWidget(self._model_label)
-        self._smart_door.models().sub(lambda model: self._update_model(model))
 
-    def _update_model(self, model: Model) -> None:
-        self._model_label.setText(pprint.pformat(model.__dict__, indent=2, width=80))
+        def _set_model_label(model: Model):
+            print(f"Setting model label for {model}")
+            self._model_label.setText(pprint.pformat(asdict(model), indent=2, width=80))
+
+        self._smart_door.models().sub(_set_model_label)

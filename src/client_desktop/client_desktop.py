@@ -1,4 +1,4 @@
-from src.client_desktop.gui import Gui
+from src.client_desktop.gui.gui import Gui
 from src.device_camera.impl_usb import UsbDeviceCamera
 from src.device_door.impl_fake import FakeDeviceDoor
 from src.image_classifier.impl_yolo import YoloImageClassifier, YoloModelSize
