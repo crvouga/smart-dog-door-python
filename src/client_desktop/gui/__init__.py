@@ -1,39 +1,55 @@
 from logging import Logger
 from PySide6.QtWidgets import (  # type: ignore
     QApplication,
-    QMainWindow,
 )
 import sys
-from abc import ABCMeta
+import signal  # Import the signal module
+from src.device_camera.interface import DeviceCamera
 from .main_window import MainWindow
 from src.library.life_cycle import LifeCycle
 
 
-qt_meta = type(QMainWindow)
-
-
-class Meta(qt_meta, ABCMeta):
-    pass
-
-
-class Gui(LifeCycle, metaclass=Meta):
+class Gui(LifeCycle):
     _logger: Logger
     _app: QApplication
     _window: MainWindow
 
-    def __init__(self, logger: Logger):
-        super().__init__()
+    def __init__(self, logger: Logger, device_camera: DeviceCamera):
         self._logger = logger.getChild("gui")
-        self._app = QApplication(sys.argv)
-        self._window = MainWindow()
+
+        # Ensure QApplication exists (Singleton Pattern)
+        app_instance = QApplication.instance()
+        if not app_instance:
+            self._app = QApplication(sys.argv)
+        else:
+            self._app = app_instance  # type: ignore
+
+        self._window = MainWindow(device_camera=device_camera)
+
+        # Set up signal handler for Ctrl+C (SIGINT)
+        signal.signal(signal.SIGINT, self._signal_handler)
+
+    def _signal_handler(self, sig, frame):
+        """Custom signal handler to quit the application gracefully."""
+        self._logger.info("SIGINT received, quitting application.")
+        self._app.quit()
 
     def start(self) -> None:
-        self._logger.info("Starting")
+        self._logger.info("Showing window")
         self._window.show()
-        self._app.exec()
-        self._logger.info("Started")
+        # self._app.exec() <-- Removed from here
+
+    def exec(self) -> int:
+        """Starts the Qt event loop. Blocking call."""
+        self._logger.info("Starting Qt event loop (blocking)")
+        exit_code = self._app.exec()
+        self._logger.info(f"Qt event loop finished with exit code {exit_code}")
+        return exit_code
 
     def stop(self) -> None:
-        self._logger.info("Stopping")
+        self._logger.info("Stopping GUI")
+        # Ensure stop is called from the main thread or via a queued connection
+        # if stop might be triggered from another thread.
         self._window.close()
-        self._logger.info("Stopped")
+        # self._app.quit() # Usually not needed here if signal handler works
+        self._logger.info("GUI stopped")

@@ -23,6 +23,7 @@
     "numpy",
     "opencv",
     "pathspec",
+    "pixmap",
     "platformdirs",
     "pluggy",
     "psutil",
