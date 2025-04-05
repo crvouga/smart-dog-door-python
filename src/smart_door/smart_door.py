@@ -6,10 +6,11 @@ from src.device_door.interface import DeviceDoor
 from src.library.life_cycle import LifeCycle
 from src.library.pub_sub import Sub
 from src.library.state_machine import StateMachine
+from src.smart_door.config import Config
 from src.smart_door.core.effect import Effect
 from src.smart_door.core.model import Model
 from src.smart_door.core.msg import Msg
-from .core import init, transition
+from .core import Transition
 from .interpret_effect import interpret_effect
 from .deps import Deps
 
@@ -32,9 +33,11 @@ class SmartDoor(LifeCycle):
             logger=logger.getChild("smart_door"),
         )
 
+        t = Transition(config=Config())
+
         self._state_machine = StateMachine(
-            init=init,
-            transition=transition,
+            init=t.init,
+            transition=t.transition,
             interpret_effect=self._interpret_effect,
             logger=self._deps.logger,
         )

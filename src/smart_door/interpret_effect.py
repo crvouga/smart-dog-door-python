@@ -36,7 +36,9 @@ def interpret_effect(deps: Deps, effect: Effect, msg_queue: queue.Queue[Msg]) ->
         )
 
     if isinstance(effect, EffectSubscribeTick):
-        ticks(interval_seconds=1).sub(lambda now: msg_queue.put(MsgTick(now=now)))
+        ticks(interval_seconds=1).sub(
+            lambda now: msg_queue.put(MsgTick(happened_at=now))
+        )
 
     if isinstance(effect, EffectCaptureFrames):
         images = deps.device_camera.capture()

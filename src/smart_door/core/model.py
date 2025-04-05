@@ -56,7 +56,7 @@ class ModelDoor:
 class ModelReady:
     camera: ModelCamera
     door: ModelDoor
-    type: Literal["ready"]
+    type: Literal["ready"] = "ready"
 
 
 Model = Union[ModelConnecting, ModelReady]
