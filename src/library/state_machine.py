@@ -3,6 +3,7 @@ import queue
 import threading
 from src.library.life_cycle import LifeCycle
 import logging
+from src.library.pub_sub import PubSub, Sub
 
 Model = TypeVar("Model")
 Msg = TypeVar("Msg")
@@ -18,6 +19,7 @@ class StateMachine(Generic[Model, Msg, Effect], LifeCycle):
     _running: bool
     _thread: Optional[threading.Thread]
     _logger: logging.Logger
+    _models: Sub[Model]
 
     def __init__(
         self,
@@ -31,6 +33,7 @@ class StateMachine(Generic[Model, Msg, Effect], LifeCycle):
         self._interpret_effect = interpret_effect
         self._msg_queue = queue.Queue[Msg]()
         self._model = None
+        self._models = PubSub[Model]()
         self._running = False
         self._thread = None
         self._logger = logger.getChild("state_machine")
@@ -43,11 +46,20 @@ class StateMachine(Generic[Model, Msg, Effect], LifeCycle):
         thread.start()
         thread.join()
 
+    def models(self) -> Sub[Model]:
+        return self._models
+
+    def _handle_output(self, model: Model, effects: List[Effect]) -> None:
+        self._models.pub(model)
+        self._model = model
+        for effect in effects:
+            self._interpret_effect_thread(effect)
+
     def _run(self) -> None:
         self._logger.info("Running")
         model, effects = self._init()
 
-        self._model = model
+        self._handle_output(model, effects)
 
         for effect in effects:
             self._interpret_effect_thread(effect)
@@ -60,15 +72,16 @@ class StateMachine(Generic[Model, Msg, Effect], LifeCycle):
                     self._running = False
                     break
 
-                if self._model is not None:
-                    model, effects = self._transition(self._model, msg)
-                    self._logger.info(
-                        f"Transition:\n\tmodel={self._model.__dict__}\n\tmsg={msg.__dict__}\n\tnew_model={model.__dict__}\n\teffects=[{', '.join(str(effect.__dict__) for effect in effects)}]"
-                    )
-                    self._model = model
+                if self._model is None:
+                    continue
 
-                    for effect in effects:
-                        self._interpret_effect_thread(effect)
+                model, effects = self._transition(self._model, msg)
+
+                self._logger.info(
+                    f"Transition:\n\tmodel={self._model.__dict__}\n\tmsg={msg.__dict__}\n\tnew_model={model.__dict__}\n\teffects=[{', '.join(str(effect.__dict__) for effect in effects)}]"
+                )
+                self._handle_output(model, effects)
+
             except queue.Empty:
                 continue
 

@@ -4,8 +4,10 @@ from src.image_classifier.interface import ImageClassifier
 from src.device_camera.interface import DeviceCamera
 from src.device_door.interface import DeviceDoor
 from src.library.life_cycle import LifeCycle
+from src.library.pub_sub import Sub
 from src.library.state_machine import StateMachine
 from src.smart_door.core.effect import Effect
+from src.smart_door.core.model import Model
 from src.smart_door.core.msg import Msg
 from .core import init, transition
 from .interpret_effect import interpret_effect
@@ -36,6 +38,9 @@ class SmartDoor(LifeCycle):
             interpret_effect=self._interpret_effect,
             logger=self._deps.logger,
         )
+
+    def models(self) -> Sub[Model]:
+        return self._state_machine.models()
 
     def _interpret_effect(self, effect: Effect, msg_queue: queue.Queue[Msg]) -> None:
         interpret_effect(deps=self._deps, effect=effect, msg_queue=msg_queue)
