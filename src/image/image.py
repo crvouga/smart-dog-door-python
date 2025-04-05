@@ -53,7 +53,7 @@ class Image:
             raise TypeError(f"Unsupported data type: {type(data)}")
 
     @property
-    def array(self) -> np.ndarray:
+    def np_array(self) -> np.ndarray:
         """Get numpy array representation"""
         return self._array
 

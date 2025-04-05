@@ -26,7 +26,6 @@ class Gui(LifeCycle):
 
         self._window = MainWindow(device_camera=device_camera)
 
-        # Set up signal handler for Ctrl+C (SIGINT)
         signal.signal(signal.SIGINT, self._signal_handler)
 
     def _signal_handler(self, sig, frame):
@@ -35,16 +34,10 @@ class Gui(LifeCycle):
         self._app.quit()
 
     def start(self) -> None:
-        self._logger.info("Showing window")
+        self._logger.info("Starting")
         self._window.show()
-        # self._app.exec() <-- Removed from here
-
-    def exec(self) -> int:
-        """Starts the Qt event loop. Blocking call."""
-        self._logger.info("Starting Qt event loop (blocking)")
-        exit_code = self._app.exec()
-        self._logger.info(f"Qt event loop finished with exit code {exit_code}")
-        return exit_code
+        self._app.exec()
+        self._logger.info("Started")
 
     def stop(self) -> None:
         self._logger.info("Stopping GUI")

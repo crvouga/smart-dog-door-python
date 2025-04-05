@@ -40,21 +40,13 @@ class DesktopClient(LifeCycle):
         )
 
     def start(self) -> None:
-        self._logger.info("Starting desktop client")
+        self._logger.info("Starting")
         self._smart_door.start()
         self._gui.start()
-        self._logger.info("Desktop client started")
-
-    def run(self) -> int:
-        """Runs the blocking part of the client, typically the GUI event loop."""
-        self._logger.info("Running DesktopClient (starting GUI event loop)")
-        # Gui.exec() starts the Qt event loop and returns the exit code
-        exit_code = self._gui.exec()
-        self._logger.info(f"DesktopClient run finished with code {exit_code}")
-        return exit_code
+        self._logger.info("Started")
 
     def stop(self) -> None:
-        self._logger.info("Stopping desktop client")
+        self._logger.info("Stopping")
         self._gui.stop()
         self._smart_door.stop()
-        self._logger.info("Desktop client stopped")
+        self._logger.info("Stopped")
