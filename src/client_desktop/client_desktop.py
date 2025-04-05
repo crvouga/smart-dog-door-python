@@ -1,5 +1,5 @@
 from src.client_desktop.gui.gui import Gui
-from src.device_camera.impl_usb import UsbDeviceCamera
+from src.device_camera.impl_indexed import IndexedDeviceCamera
 from src.device_door.impl_fake import FakeDeviceDoor
 from src.image_classifier.impl_yolo import YoloImageClassifier, YoloModelSize
 from src.library.life_cycle import LifeCycle
@@ -28,8 +28,8 @@ class DesktopClient(LifeCycle):
 
         self._device_door = FakeDeviceDoor(logger=self._logger)
 
-        self._device_camera: DeviceCamera = UsbDeviceCamera(
-            logger=self._logger, device_id=1
+        self._device_camera: DeviceCamera = IndexedDeviceCamera(
+            logger=self._logger,
         )
 
         self._smart_door = SmartDoor(

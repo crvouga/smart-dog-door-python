@@ -2,10 +2,8 @@ import cv2  # type: ignore
 import threading
 import time
 from logging import Logger
-from typing import List, Optional, cast
-
+from typing import List, Optional
 from src.image.image import Image
-from src.library.life_cycle import LifeCycle
 from src.library.pub_sub import PubSub, Sub
 from .interface import DeviceCamera
 from .event import (
@@ -15,7 +13,7 @@ from .event import (
 )
 
 
-class UsbDeviceCamera(DeviceCamera):
+class IndexedDeviceCamera(DeviceCamera):
     _logger: Logger
     _device_id: int
     _pub_sub: PubSub[EventCamera]
