@@ -1,5 +1,6 @@
 from logging import Logger
 from src.device_camera.impl_fake import FakeDeviceCamera
+from src.image_classifier.impl_yolo import YoloImageClassifier, YoloModelSize
 from src.smart_door.config import Config
 from src.smart_door.core import (
     Transition,
@@ -19,6 +20,7 @@ class Fixture:
         self.logger = Logger("test")
         self.t = Transition(config=self.config)
         self.device_camera = FakeDeviceCamera(logger=self.logger)
+        self.image_classifier = YoloImageClassifier(model_size=YoloModelSize.NANO)
 
     def transition_to_ready_state(self, model: Model) -> ModelReady:
         model, _ = self.t.transition(

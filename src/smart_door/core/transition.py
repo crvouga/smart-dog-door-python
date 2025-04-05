@@ -12,7 +12,14 @@ from .model import (
     CameraState,
     DoorState,
 )
-from .msg import Msg, MsgCameraEvent, MsgDoorEvent, MsgImageCaptureDone, MsgTick
+from .msg import (
+    Msg,
+    MsgCameraEvent,
+    MsgDoorEvent,
+    MsgImageCaptureDone,
+    MsgImageClassifyDone,
+    MsgTick,
+)
 from .effect import (
     Effect,
     EffectCaptureImage,
@@ -139,6 +146,11 @@ class Transition:
         )
         effects_new.extend(effects)
 
+        camera_new, effects = self._transition_camera_classifying_to_idle(
+            camera=camera_new, msg=msg
+        )
+        effects_new.extend(effects)
+
         return camera_new, effects_new
 
     def _transition_camera_idle_to_capturing(
@@ -183,3 +195,20 @@ class Transition:
         )
 
         return camera_new, [EffectClassifyImages(images=msg.images)]
+
+    def _transition_camera_classifying_to_idle(
+        self, camera: ModelCamera, msg: Msg
+    ) -> tuple[ModelCamera, list[Effect]]:
+        if not isinstance(msg, MsgImageClassifyDone):
+            return camera, []
+
+        if camera.state != CameraState.Classifying:
+            return camera, []
+
+        camera_new = ModelCamera(
+            state=CameraState.Idle,
+            state_start_time=msg.happened_at,
+            latest_classification=msg.classifications,
+        )
+
+        return camera_new, []
