@@ -1,6 +1,4 @@
-from logging import Logger
 from PySide6.QtWidgets import (  # type: ignore
-    QApplication,
     QMainWindow,
     QWidget,
     QVBoxLayout,
@@ -8,18 +6,6 @@ from PySide6.QtWidgets import (  # type: ignore
     QLabel,
 )
 from PySide6.QtCore import Qt  # type: ignore
-import sys
-from abc import ABCMeta
-
-from src.library.life_cycle import LifeCycle
-
-
-# Resolve metaclass conflict between QMainWindow and LifeCycle (ABC)
-qt_meta = type(QMainWindow)
-
-
-class CombinedMeta(qt_meta, ABCMeta):
-    pass
 
 
 class MainWindow(QMainWindow):
@@ -27,7 +13,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("Image Classifier")
         ASPECT_RATIO_H_W = 9 / 16
-        WIDTH = 800
+        WIDTH = 1000
         HEIGHT = WIDTH * ASPECT_RATIO_H_W
         self.setMinimumSize(WIDTH, HEIGHT)
 
@@ -72,26 +58,3 @@ class MainWindow(QMainWindow):
 
     def on_classify_clicked(self):
         self.result_label.setText("Classification in progress...")
-
-
-class Gui(LifeCycle, metaclass=CombinedMeta):
-    _logger: Logger
-    _app: QApplication
-    _window: MainWindow
-
-    def __init__(self, logger: Logger):
-        super().__init__()
-        self._logger = logger.getChild("gui")
-        self._app = QApplication(sys.argv)
-        self._window = MainWindow()
-
-    def start(self) -> None:
-        self._logger.info("Starting GUI")
-        self._window.show()
-        self._app.exec()
-        self._logger.info("GUI started")
-
-    def stop(self) -> None:
-        self._logger.info("Stopping GUI")
-        self._window.close()
-        self._logger.info("GUI stopped")
