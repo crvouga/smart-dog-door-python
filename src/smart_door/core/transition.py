@@ -15,6 +15,7 @@ from .model import (
 from .msg import Msg, MsgCameraEvent, MsgDoorEvent, MsgTick
 from .effect import (
     Effect,
+    EffectCaptureImage,
     EffectSubscribeCamera,
     EffectSubscribeDoor,
     EffectSubscribeTick,
@@ -157,5 +158,5 @@ class Transition:
                 state_start_time=msg.happened_at,
                 latest_classification=[],
             ),
-            [],
+            [EffectCaptureImage()],
         )

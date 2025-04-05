@@ -14,8 +14,8 @@ class EffectCloseDoor:
 
 
 @dataclass
-class EffectCaptureFrames:
-    type: Literal["capture_frames"] = "capture_frames"
+class EffectCaptureImage:
+    type: Literal["capture_image"] = "capture_image"
 
 
 @dataclass
@@ -42,7 +42,7 @@ class EffectSubscribeTick:
 Effect = Union[
     EffectOpenDoor,
     EffectCloseDoor,
-    EffectCaptureFrames,
+    EffectCaptureImage,
     EffectClassifyImages,
     EffectSubscribeCamera,
     EffectSubscribeDoor,

@@ -2,7 +2,7 @@ from src.device_camera.event import EventCamera
 from .core import (
     Effect,
     Msg,
-    EffectCaptureFrames,
+    EffectCaptureImage,
     EffectClassifyImages,
     EffectSubscribeCamera,
     EffectSubscribeDoor,
@@ -40,7 +40,7 @@ def interpret_effect(deps: Deps, effect: Effect, msg_queue: queue.Queue[Msg]) ->
             lambda now: msg_queue.put(MsgTick(happened_at=now))
         )
 
-    if isinstance(effect, EffectCaptureFrames):
+    if isinstance(effect, EffectCaptureImage):
         images = deps.device_camera.capture()
         msg_queue.put(MsgFramesCaptureDone(images=images))
 

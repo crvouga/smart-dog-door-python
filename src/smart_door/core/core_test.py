@@ -3,6 +3,7 @@ from src.smart_door.config import Config
 from src.smart_door.core import (
     Transition,
     ConnectionState,
+    EffectCaptureImage,
     CameraState,
     DoorState,
     EffectSubscribeCamera,
@@ -72,12 +73,14 @@ def test_transition_camera_to_capturing_state() -> None:
 
     model = _transition_to_ready_state(t=t, model=model)
 
-    model, _ = t.transition(
+    model, effects = t.transition(
         model=model,
         msg=MsgTick(happened_at=datetime.now() + config.minimal_rate_camera_process),
     )
 
     assert isinstance(model, ModelReady)
+    assert len(effects) == 1
+    assert isinstance(effects[0], EffectCaptureImage)
     assert model.camera.state == CameraState.Capturing
 
 
