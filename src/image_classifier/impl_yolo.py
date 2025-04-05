@@ -1,5 +1,6 @@
 from ultralytics import YOLO  # type: ignore
 from src.image.image import Image
+from src.image_classifier.bounding_box import BoundingBox
 from .interface import ImageClassifier, Classification
 from enum import Enum
 from typing import Iterator
@@ -62,4 +63,13 @@ class YoloImageClassifier(ImageClassifier):
                     "unknown",
                 )
 
-                yield Classification(label=label, weight=confidence)
+                bounding_box = BoundingBox(
+                    x_min=float(box.xyxy[0][0]),
+                    y_min=float(box.xyxy[0][1]),
+                    x_max=float(box.xyxy[0][2]),
+                    y_max=float(box.xyxy[0][3]),
+                )
+
+                yield Classification(
+                    label=label, weight=confidence, bounding_box=bounding_box
+                )
