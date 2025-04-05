@@ -1,8 +1,15 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Literal, Union
 from enum import Enum, auto
 from datetime import datetime
 from src.image_classifier.classification import Classification
+from src.smart_door.config import Config
+
+
+@dataclass
+class _ModelBase:
+    type: str
+    config: Config = field(default_factory=Config)
 
 
 class ConnectionState(Enum):
@@ -14,10 +21,10 @@ class ConnectionState(Enum):
 
 
 @dataclass
-class ModelConnecting:
-    camera: ConnectionState
-    door: ConnectionState
-    type: Literal["connecting"]
+class ModelConnecting(_ModelBase):
+    camera: ConnectionState = field(default=ConnectionState.Connecting)
+    door: ConnectionState = field(default=ConnectionState.Connecting)
+    type: Literal["connecting"] = "connecting"
 
 
 class CameraState(Enum):
@@ -31,9 +38,9 @@ class CameraState(Enum):
 
 @dataclass
 class ModelCamera:
-    state: CameraState
-    state_start_time: datetime
-    latest_classification: list[Classification]
+    state: CameraState = field(default=CameraState.Idle)
+    state_start_time: datetime = field(default_factory=datetime.now)
+    latest_classification: list[Classification] = field(default_factory=list)
 
 
 class DoorState(Enum):
@@ -48,14 +55,14 @@ class DoorState(Enum):
 
 @dataclass
 class ModelDoor:
-    state: DoorState
-    state_start_time: datetime
+    state: DoorState = field(default=DoorState.Closed)
+    state_start_time: datetime = field(default_factory=datetime.now)
 
 
 @dataclass
-class ModelReady:
-    camera: ModelCamera
-    door: ModelDoor
+class ModelReady(_ModelBase):
+    camera: ModelCamera = field(default_factory=ModelCamera)
+    door: ModelDoor = field(default_factory=ModelDoor)
     type: Literal["ready"] = "ready"
 
 
