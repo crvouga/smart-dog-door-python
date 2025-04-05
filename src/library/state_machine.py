@@ -44,7 +44,9 @@ class StateMachine(Generic[Model, Msg, Effect], LifeCycle):
         self._should_log = should_log
 
     def _interpret_effect_thread(self, effect: Effect) -> None:
-        self._logger.info("Effect: %s", effect)
+        if self._should_log:
+            self._logger.info("Effect: %s", effect)
+
         thread = threading.Thread(
             target=self._interpret_effect, args=(effect, self._msg_queue)
         )
@@ -64,7 +66,6 @@ class StateMachine(Generic[Model, Msg, Effect], LifeCycle):
             self._interpret_effect_thread(effect)
 
     def _run(self) -> None:
-        self._logger.info("Running")
         model, effects = self._init()
 
         self._handle_output(model, effects)

@@ -1,5 +1,7 @@
 from dataclasses import asdict
+from datetime import datetime
 import pprint
+from typing import Any
 from PySide6.QtWidgets import (  # type: ignore
     QMainWindow,
     QWidget,
@@ -8,6 +10,8 @@ from PySide6.QtWidgets import (  # type: ignore
 )
 from PySide6.QtCore import Qt  # type: ignore
 from PySide6.QtGui import QPalette, QColor  # type: ignore
+import pytz
+from src.library.dict_ext import recursive_map
 from src.smart_door.core.msg import Msg
 from src.smart_door.smart_door import SmartDoor
 from src.smart_door.core.model import Model
@@ -58,7 +62,7 @@ class WindowDebug(QMainWindow):
         self._main_layout.addWidget(self._model_label)
 
         def _set_model_label(model: Model):
-            self._model_label.setText(pprint.pformat(asdict(model), indent=2, width=80))
+            self._model_label.setText(format_obj(model))
 
         self._smart_door.models().sub(_set_model_label)
 
@@ -71,6 +75,22 @@ class WindowDebug(QMainWindow):
         self._main_layout.addWidget(self._msgs_label)
 
         def _set_msgs_label(msg: Msg):
-            self._msgs_label.setText(pprint.pformat(asdict(msg), indent=2, width=80))
+            self._msgs_label.setText(format_obj(msg))
 
         self._smart_door.msgs().sub(_set_msgs_label)
+
+
+def format_obj(obj: Any) -> str:
+    return pprint.pformat(obj_to_dict(obj), indent=2, width=80, sort_dicts=True)
+
+
+def obj_to_dict(obj: Any) -> Any:
+    dataclass_dict = asdict(obj)
+    mapped = recursive_map(dataclass_dict, _map_value)
+    return mapped
+
+
+def _map_value(value: Any) -> Any:
+    if isinstance(value, datetime):
+        return value.strftime("%Y-%m-%d %I:%M:%S %p MST")
+    return value
