@@ -8,7 +8,10 @@ class Fixture:
     image_classifier: ImageClassifier
 
     def __init__(self) -> None:
-        self.image_classifier = YoloImageClassifier(model_size=YoloModelSize.LARGE)
+        self.image_classifier = YoloImageClassifier(
+            model_size=YoloModelSize.EXTRA_LARGE,
+            # confidence_threshold=0.5,
+        )
 
 
 def assert_dog(image_asset: str) -> None:
