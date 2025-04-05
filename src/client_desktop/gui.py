@@ -26,7 +26,10 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Image Classifier")
-        self.setMinimumSize(400, 300)
+        ASPECT_RATIO_H_W = 9 / 16
+        WIDTH = 800
+        HEIGHT = WIDTH * ASPECT_RATIO_H_W
+        self.setMinimumSize(WIDTH, HEIGHT)
 
         # Create central widget and layout
         central_widget = QWidget()
