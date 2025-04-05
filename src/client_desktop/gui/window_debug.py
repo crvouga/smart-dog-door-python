@@ -55,7 +55,7 @@ class WindowDebug(QMainWindow):
     def _setup_model_label(self) -> None:
         self._model_label = QLabel("Model")
         self._model_label.setStyleSheet(
-            "color: white; font-size: 14px; font-family: monospace;"
+            "color: white; font-size: 14px; font-family: 'Courier New', monospace;"
         )
         self._model_label.setAlignment(Qt.AlignLeft)
         self._main_layout.addWidget(self._model_label)
@@ -68,7 +68,7 @@ class WindowDebug(QMainWindow):
     def _setup_msgs_label(self):
         self._msgs_label = QLabel("Msg")
         self._msgs_label.setStyleSheet(
-            "color: white; font-size: 14px; font-family: monospace;"
+            "color: white; font-size: 14px; font-family: 'Courier New', monospace;"
         )
         self._msgs_label.setAlignment(Qt.AlignLeft)
         self._main_layout.addWidget(self._msgs_label)

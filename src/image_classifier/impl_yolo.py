@@ -43,6 +43,7 @@ class YoloImageClassifier(ImageClassifier):
                 source=image.pil_image,
                 conf=self._confidence_threshold,
                 classes=list(self._class_indices.values()),
+                verbose=False,
             )
             yield from self._classify_image(results=results)
 
