@@ -90,7 +90,7 @@ class UsbDeviceCamera(DeviceCamera):
             return [Image(self._latest_frame)]
 
     def events(self) -> Sub[EventCamera]:
-        return self._pub_sub.sub()
+        return self._pub_sub
 
     def _publish_event(self, event: EventCamera) -> None:
         try:

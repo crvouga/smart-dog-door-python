@@ -2,7 +2,7 @@ from logging import Logger
 import time
 from datetime import timedelta
 from .interface import DeviceDoor
-from .event import EventDoor
+from .event import EventDoor, EventDoorConnected, EventDoorDisconnected
 from src.library.pub_sub import PubSub, Sub
 
 
@@ -28,6 +28,8 @@ class FakeDeviceDoor(DeviceDoor):
 
     def events(self) -> Sub[EventDoor]:
         pub_sub = PubSub[EventDoor]()
+
+        pub_sub.pub(EventDoorConnected())
 
         return pub_sub
 

@@ -55,8 +55,14 @@ class CameraFeedWidget(QWidget):
     ):
         super().__init__()
         self._device_camera = device_camera
+        self._setup_geometry(x=x, y=y, width=width, height=height)
+        self._setup_layout()
+        self._setup_camera_worker(fps=fps)
+
+    def _setup_geometry(self, x: int, y: int, width: int, height: int) -> None:
         self.setGeometry(x, y, width, height)
 
+    def _setup_layout(self) -> None:
         layout = QVBoxLayout()
         self.setLayout(layout)
 
@@ -64,8 +70,9 @@ class CameraFeedWidget(QWidget):
         self._feed_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(self._feed_label)
 
+    def _setup_camera_worker(self, fps: int) -> None:
         self._thread = QThread()
-        self._worker = CameraWorker(device_camera, fps)
+        self._worker = CameraWorker(self._device_camera, fps)
         self._worker.moveToThread(self._thread)
         self._thread.started.connect(self._worker.process)
         self._worker.image_ready.connect(self._update_feed)
