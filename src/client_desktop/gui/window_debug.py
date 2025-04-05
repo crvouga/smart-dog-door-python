@@ -10,7 +10,6 @@ from PySide6.QtWidgets import (  # type: ignore
 )
 from PySide6.QtCore import Qt  # type: ignore
 from PySide6.QtGui import QPalette, QColor  # type: ignore
-import pytz
 from src.library.dict_ext import recursive_map
 from src.smart_door.core.msg import Msg
 from src.smart_door.smart_door import SmartDoor
