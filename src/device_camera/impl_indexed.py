@@ -69,17 +69,30 @@ class IndexedDeviceCamera(DeviceCamera):
 
     def _cleanup_camera(self) -> None:
         with self._lock:
-            if self._cap:
-                try:
-                    self._cap.release()
-                    self._logger.info("OpenCV capture released.")
-                except Exception as e:
-                    self._logger.error(f"Error releasing OpenCV capture: {e}")
-                self._cap = None
-            self._latest_frame = None
-            if self._connected:
-                self._connected = False
-                self._publish_event(EventCameraDisconnected())
+            self._release_capture()
+            self._reset_frame()
+            self._handle_disconnection()
+
+    def _release_capture(self) -> None:
+        if not self._cap:
+            return
+
+        try:
+            self._cap.release()
+            self._logger.info("OpenCV capture released.")
+        except Exception as e:
+            self._logger.error(f"Error releasing OpenCV capture: {e}")
+        self._cap = None
+
+    def _reset_frame(self) -> None:
+        self._latest_frame = None
+
+    def _handle_disconnection(self) -> None:
+        if not self._connected:
+            return
+
+        self._connected = False
+        self._publish_event(EventCameraDisconnected())
 
     def capture(self) -> List[Image]:
         with self._lock:
@@ -124,26 +137,38 @@ class IndexedDeviceCamera(DeviceCamera):
         reconnect_delay_seconds = 1
         while self._running:
             try:
-                with self._lock:
-                    if not self._connect_camera():
-                        time.sleep(reconnect_delay_seconds)
-                        continue
-
-                if not self._cap:
-                    time.sleep(reconnect_delay_seconds)
-                    continue
-
-                ret, frame = self._cap.read()
-                if not ret:
-                    self._logger.warning("Failed to read frame from camera")
-                    self._handle_frame_read_failure()
-                    time.sleep(reconnect_delay_seconds)
-                    continue
-
-                with self._lock:
-                    self._latest_frame = frame
-
+                self._attempt_capture()
             except Exception as e:
                 self._logger.error(f"Error in capture loop: {e}")
                 self._handle_frame_read_failure()
                 time.sleep(reconnect_delay_seconds)
+
+    def _attempt_capture(self) -> None:
+        reconnect_delay_seconds = 1
+
+        if not self._try_connect_camera():
+            time.sleep(reconnect_delay_seconds)
+            return
+
+        if not self._cap:
+            time.sleep(reconnect_delay_seconds)
+            return
+
+        if not self._read_and_store_frame():
+            time.sleep(reconnect_delay_seconds)
+            return
+
+    def _try_connect_camera(self) -> bool:
+        with self._lock:
+            return self._connect_camera()
+
+    def _read_and_store_frame(self) -> bool:
+        ret, frame = self._cap.read()
+        if not ret:
+            self._logger.warning("Failed to read frame from camera")
+            self._handle_frame_read_failure()
+            return False
+
+        with self._lock:
+            self._latest_frame = frame
+        return True
