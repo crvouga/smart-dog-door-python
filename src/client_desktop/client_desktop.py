@@ -16,7 +16,6 @@ class DesktopClient(LifeCycle):
     _device_door: DeviceDoor
     _device_camera: DeviceCamera
     _smart_door: SmartDoor
-    _resources: list[LifeCycle]
 
     def __init__(self, logger: Logger) -> None:
         self._logger = logger.getChild("client_desktop")
@@ -38,19 +37,14 @@ class DesktopClient(LifeCycle):
             logger=self._logger,
         )
 
-        self._resources = [
-            self._smart_door,
-            self._gui,
-        ]
-
     def start(self) -> None:
         self._logger.info("Starting desktop client")
-        for resource in self._resources:
-            resource.start()
+        self._smart_door.start()
+        self._gui.start()
         self._logger.info("Desktop client started")
 
     def stop(self) -> None:
         self._logger.info("Stopping desktop client")
-        for resource in reversed(self._resources):
-            resource.stop()
+        self._gui.stop()
+        self._smart_door.stop()
         self._logger.info("Desktop client stopped")

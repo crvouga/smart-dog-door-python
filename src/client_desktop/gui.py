@@ -85,6 +85,7 @@ class Gui(LifeCycle, metaclass=CombinedMeta):
     def start(self) -> None:
         self._logger.info("Starting GUI")
         self._window.show()
+        self._app.exec()
         self._logger.info("GUI started")
 
     def stop(self) -> None:
