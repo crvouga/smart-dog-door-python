@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (  # type: ignore
 )
 from PySide6.QtCore import Qt  # type: ignore
 from PySide6.QtGui import QPalette, QColor  # type: ignore
+from src.smart_door.core.msg import Msg
 from src.smart_door.smart_door import SmartDoor
 from src.smart_door.core.model import Model
 
@@ -16,6 +17,7 @@ class WindowDebug(QMainWindow):
     _smart_door: SmartDoor
     _main_layout: QVBoxLayout
     _model_label: QLabel
+    _msgs_label: QLabel
 
     def __init__(self, smart_door: SmartDoor):
         super().__init__()
@@ -23,7 +25,8 @@ class WindowDebug(QMainWindow):
         self._setup_window()
         self._setup_background()
         self._setup_layout()
-        self._setup_model()
+        self._setup_msgs_label()
+        self._setup_model_label()
 
     def _setup_window(self) -> None:
         self.setWindowTitle("Debug Window")
@@ -46,8 +49,8 @@ class WindowDebug(QMainWindow):
         main_layout.setSpacing(10)
         self._main_layout = main_layout
 
-    def _setup_model(self) -> None:
-        self._model_label = QLabel("Model State")
+    def _setup_model_label(self) -> None:
+        self._model_label = QLabel("Model")
         self._model_label.setStyleSheet(
             "color: white; font-size: 14px; font-family: monospace;"
         )
@@ -58,3 +61,16 @@ class WindowDebug(QMainWindow):
             self._model_label.setText(pprint.pformat(asdict(model), indent=2, width=80))
 
         self._smart_door.models().sub(_set_model_label)
+
+    def _setup_msgs_label(self):
+        self._msgs_label = QLabel("Msg")
+        self._msgs_label.setStyleSheet(
+            "color: white; font-size: 14px; font-family: monospace;"
+        )
+        self._msgs_label.setAlignment(Qt.AlignLeft)
+        self._main_layout.addWidget(self._msgs_label)
+
+        def _set_msgs_label(msg: Msg):
+            self._msgs_label.setText(pprint.pformat(asdict(msg), indent=2, width=80))
+
+        self._smart_door.msgs().sub(_set_msgs_label)

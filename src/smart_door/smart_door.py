@@ -45,6 +45,9 @@ class SmartDoor(LifeCycle):
     def models(self) -> Sub[Model]:
         return self._state_machine.models()
 
+    def msgs(self) -> Sub[Msg]:
+        return self._state_machine.msgs()
+
     def _interpret_effect(self, effect: Effect, msg_queue: queue.Queue[Msg]) -> None:
         interpret_effect(deps=self._deps, effect=effect, msg_queue=msg_queue)
 

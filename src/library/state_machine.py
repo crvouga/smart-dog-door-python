@@ -20,6 +20,7 @@ class StateMachine(Generic[Model, Msg, Effect], LifeCycle):
     _thread: Optional[threading.Thread]
     _logger: logging.Logger
     _models: PubSub[Model]
+    _msgs: PubSub[Msg]
     _should_log: bool
 
     def __init__(
@@ -36,6 +37,7 @@ class StateMachine(Generic[Model, Msg, Effect], LifeCycle):
         self._msg_queue = queue.Queue[Msg]()
         self._model = None
         self._models = PubSub[Model]()
+        self._msgs = PubSub[Msg]()
         self._running = False
         self._thread = None
         self._logger = logger.getChild("state_machine")
@@ -51,6 +53,9 @@ class StateMachine(Generic[Model, Msg, Effect], LifeCycle):
 
     def models(self) -> Sub[Model]:
         return self._models
+
+    def msgs(self) -> Sub[Msg]:
+        return self._msgs
 
     def _handle_output(self, model: Model, effects: List[Effect]) -> None:
         self._models.pub(model)
@@ -78,6 +83,7 @@ class StateMachine(Generic[Model, Msg, Effect], LifeCycle):
                 if self._model is None:
                     continue
 
+                self._msgs.pub(msg)
                 model, effects = self._transition(self._model, msg)
 
                 if self._should_log:

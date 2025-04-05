@@ -21,17 +21,34 @@ class Gui(LifeCycle):
         self, logger: Logger, device_camera: DeviceCamera, smart_door: SmartDoor
     ):
         self._logger = logger.getChild("gui")
+        self._device_camera = device_camera
+        self._smart_door = smart_door
+        self._init_app()
+        self._init_windows()
+        self._init_signal_handler()
 
-        # Ensure QApplication exists (Singleton Pattern)
+    def _init_app(self) -> None:
         app_instance = QApplication.instance()
         if not app_instance:
             self._app = QApplication(sys.argv)
         else:
             self._app = app_instance  # type: ignore
 
-        self._window = WindowMain(device_camera=device_camera, smart_door=smart_door)
-        self._debug_window = WindowDebug(smart_door=smart_door)
+    def _init_windows(self) -> None:
+        self._window = WindowMain(
+            device_camera=self._device_camera, smart_door=self._smart_door
+        )
+        self._debug_window = WindowDebug(smart_door=self._smart_door)
 
+        screen = self._app.primaryScreen().geometry()
+        window_width = self._window.width()
+        window_height = self._window.height()
+
+        self._window.move(0, 0)
+
+        self._debug_window.move(window_width, 0)
+
+    def _init_signal_handler(self) -> None:
         signal.signal(signal.SIGINT, self._signal_handler)
 
     def _signal_handler(self, sig, frame):
