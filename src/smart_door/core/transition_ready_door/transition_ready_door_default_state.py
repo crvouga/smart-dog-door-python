@@ -1,13 +1,13 @@
 from dataclasses import replace
-from .model import (
+from ..model import (
     DoorState,
     ModelDoor,
     ModelReady,
 )
-from .msg import (
+from ..msg import (
     Msg,
 )
-from .effect import (
+from ..effect import (
     Effect,
 )
 

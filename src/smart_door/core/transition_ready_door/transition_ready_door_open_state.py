@@ -1,16 +1,16 @@
 from dataclasses import replace
 from src.image_classifier.classification import Classification
 from src.image_classifier.classification_config import ClassificationConfig
-from .model import (
+from ..model import (
     DoorState,
     ModelDoor,
     ModelReady,
 )
-from .msg import (
+from ..msg import (
     Msg,
     MsgTick,
 )
-from .effect import (
+from ..effect import (
     Effect,
     EffectOpenDoor,
 )

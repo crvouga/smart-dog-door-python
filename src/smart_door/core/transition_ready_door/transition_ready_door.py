@@ -1,11 +1,11 @@
-from .model import (
+from ..model import (
     ModelDoor,
     ModelReady,
 )
-from .msg import (
+from ..msg import (
     Msg,
 )
-from .effect import (
+from ..effect import (
     Effect,
 )
 from .transition_ready_door_open_state import transition_ready_door_open

@@ -1,7 +1,9 @@
 from datetime import datetime
 from src.device_camera.event import EventCameraConnected, EventCameraDisconnected
 from src.device_door.event import EventDoorConnected, EventDoorDisconnected
-from src.smart_door.core.transition_ready_door import transition_ready_door
+from src.smart_door.core.transition_ready_door.transition_ready_door import (
+    transition_ready_door,
+)
 from .model import (
     Model,
     ModelConnecting,
