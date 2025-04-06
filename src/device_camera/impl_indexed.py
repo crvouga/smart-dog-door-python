@@ -2,7 +2,8 @@ import cv2  # type: ignore
 import threading
 import time
 from logging import Logger
-from typing import List, Optional
+from typing import List, Optional, Iterator
+from itertools import cycle
 from src.image.image import Image
 from src.library.pub_sub import PubSub, Sub
 from .interface import DeviceCamera
@@ -15,7 +16,8 @@ from .event import (
 
 class IndexedDeviceCamera(DeviceCamera):
     _logger: Logger
-    _device_id: int
+    _device_ids: List[int]
+    _device_id_cycle: Iterator[int]
     _pub_sub: PubSub[EventCamera]
     _capture_thread: Optional[threading.Thread]
     _running: bool
@@ -24,9 +26,10 @@ class IndexedDeviceCamera(DeviceCamera):
     _latest_frame: Optional[cv2.typing.MatLike]
     _connected: bool
 
-    def __init__(self, logger: Logger, device_id: int):
-        self._logger = logger.getChild("usb_device_camera")
-        self._device_id = device_id
+    def __init__(self, logger: Logger, device_ids: List[int]):
+        self._logger = logger.getChild("indexed_device_camera")
+        self._device_ids = device_ids
+        self._device_id_cycle = cycle(device_ids)
         self._pub_sub = PubSub[EventCamera]()
         self._capture_thread = None
         self._running = False
@@ -34,14 +37,14 @@ class IndexedDeviceCamera(DeviceCamera):
         self._cap = None
         self._latest_frame = None
         self._connected = False
-        self._logger.info(f"Initialized for USB camera ID: {device_id}")
+        self._logger.info(f"Initialized for camera IDs: {device_ids}")
 
     def start(self) -> None:
         if self._running:
             self._logger.warning("Already running.")
             return
 
-        self._logger.info("Starting UsbDeviceCamera...")
+        self._logger.info("Starting IndexedDeviceCamera...")
         self._running = True
         self._capture_thread = threading.Thread(target=self._capture_loop, daemon=True)
         self._capture_thread.start()
@@ -52,11 +55,11 @@ class IndexedDeviceCamera(DeviceCamera):
             self._logger.warning("Already stopped.")
             return
 
-        self._logger.info("Stopping UsbDeviceCamera...")
+        self._logger.info("Stopping IndexedDeviceCamera...")
         self._running = False
         self._cleanup_capture_thread()
         self._cleanup_camera()
-        self._logger.info("UsbDeviceCamera stopped.")
+        self._logger.info("IndexedDeviceCamera stopped.")
 
     def _cleanup_capture_thread(self) -> None:
         if not self._capture_thread:
@@ -98,7 +101,9 @@ class IndexedDeviceCamera(DeviceCamera):
         with self._lock:
             if not self._connected or self._latest_frame is None:
                 return []
-            return [Image(self._latest_frame)]
+            # Convert color space BGR (OpenCV default) to RGB
+            frame_rgb = cv2.cvtColor(self._latest_frame, cv2.COLOR_BGR2RGB)
+            return [Image.from_np_array(frame_rgb)]
 
     def events(self) -> Sub[EventCamera]:
         return self._pub_sub
@@ -109,20 +114,30 @@ class IndexedDeviceCamera(DeviceCamera):
         except Exception as e:
             self._logger.error(f"Error publishing event {type(event).__name__}: {e}")
 
+    def _get_next_device_id(self) -> int:
+        return next(self._device_id_cycle)
+
     def _connect_camera(self) -> bool:
         if self._cap is not None:
             return True
 
-        self._logger.info(f"Attempting to connect to USB camera: {self._device_id}")
-        cap = cv2.VideoCapture(self._device_id)
-        if not cap.isOpened():
-            self._logger.warning("Failed to open camera, will retry...")
-            return False
+        device_id = self._get_next_device_id()
+        self._logger.info(f"Attempting to connect to camera: {device_id}")
+        try:
+            cap = cv2.VideoCapture(device_id)
+            if not cap.isOpened():
+                self._logger.warning(
+                    f"Failed to open camera {device_id}, will try next..."
+                )
+                return False
 
-        self._cap = cap
-        self._connected = True
-        self._publish_event(EventCameraConnected())
-        return True
+            self._cap = cap
+            self._connected = True
+            self._publish_event(EventCameraConnected())
+            return True
+        except Exception as e:
+            self._logger.error(f"Error connecting to camera {device_id}: {e}")
+            return False
 
     def _handle_frame_read_failure(self) -> None:
         with self._lock:
