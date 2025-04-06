@@ -12,6 +12,8 @@ from .msg import (
 )
 from .effect import (
     Effect,
+    EffectCloseDoor,
+    EffectOpenDoor,
 )
 
 
@@ -70,7 +72,7 @@ def _transition_from_will_close_to_closed(
     if elapsed_time < model.config.minimal_duration_will_close:
         return door, []
 
-    return replace(door, state=DoorState.Closed), []
+    return replace(door, state=DoorState.Closed), [EffectCloseDoor()]
 
 
 def _does_have_close_list_objects(
@@ -110,7 +112,7 @@ def _transition_from_will_open_to_open(
     if elapsed_time < model.config.minimal_duration_will_open:
         return door, []
 
-    return replace(door, state=DoorState.Open), []
+    return replace(door, state=DoorState.Open), [EffectOpenDoor()]
 
 
 def _transition_door_to_will_open(

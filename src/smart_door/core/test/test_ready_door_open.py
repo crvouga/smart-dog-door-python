@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from dataclasses import replace
 from src.image_classifier.classification import Classification
+from src.smart_door.core.effect import EffectOpenDoor
 from src.smart_door.core.model import DoorState, Model, ModelReady
 from src.smart_door.core.msg import MsgTick
 from src.smart_door.core.test.fixture import BaseFixture
@@ -55,7 +56,7 @@ def test_transition_to_open_state_if_state_is_will_close() -> None:
 def test_transition_to_open_state_after_minimal_duration_will_open() -> None:
     f = Fixture(door_state=DoorState.WillOpen)
 
-    model, _ = f.transition(
+    model, effects = f.transition(
         model=f.model,
         msg=MsgTick(
             happened_at=datetime.now() + f.model.config.minimal_duration_will_open
@@ -64,3 +65,4 @@ def test_transition_to_open_state_after_minimal_duration_will_open() -> None:
 
     assert isinstance(model, ModelReady)
     assert model.door.state == DoorState.Open
+    assert any(isinstance(effect, EffectOpenDoor) for effect in effects)
