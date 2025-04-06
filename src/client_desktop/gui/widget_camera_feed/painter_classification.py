@@ -16,6 +16,7 @@ LABEL_COLORS = {
     "dog": QColor(0, 128, 0),
     "cat": QColor(255, 0, 0),
 }
+BORDER_RADIUS = 5
 
 
 class PainterClassification:
@@ -54,7 +55,7 @@ class PainterClassification:
         pen = QPen(color)
         pen.setWidth(BOUNDING_BOX_WIDTH)
         self._painter.setPen(pen)
-        self._painter.drawRect(x, y, width, height)
+        self._painter.drawRoundedRect(x, y, width, height, BORDER_RADIUS, BORDER_RADIUS)
 
     def _draw_label(
         self, classification: Classification, rect_x: int, rect_y: int, rect_w: int
