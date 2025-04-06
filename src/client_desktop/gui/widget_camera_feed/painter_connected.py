@@ -3,7 +3,7 @@ from PySide6.QtGui import QImage, QPixmap, QPainter  # type: ignore
 from PySide6.QtCore import Qt  # type: ignore
 from src.image_classifier.classification import Classification
 from typing import List
-from .painter_classification import PainterClassification
+from .painter_classifications import PainterClassifications
 
 
 class PainterConnected:
@@ -33,7 +33,7 @@ class PainterConnected:
         scale_y = scaled_h / orig_h
 
         painter = QPainter(scaled_pixmap)
-        painter_classification = PainterClassification(painter)
+        painter_classification = PainterClassifications(painter)
 
         for classification in self._classifications:
             painter_classification.draw(classification, scale_x, scale_y)

@@ -24,7 +24,7 @@ class IndexedDeviceCamera(DeviceCamera):
     _latest_frame: Optional[cv2.typing.MatLike]
     _connected: bool
 
-    def __init__(self, logger: Logger, device_id: int = 0):
+    def __init__(self, logger: Logger, device_id: int):
         self._logger = logger.getChild("usb_device_camera")
         self._device_id = device_id
         self._pub_sub = PubSub[EventCamera]()

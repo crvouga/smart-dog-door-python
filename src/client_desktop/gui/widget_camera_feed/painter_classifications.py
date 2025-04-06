@@ -1,4 +1,5 @@
 from PySide6.QtGui import QPainter, QPen, QColor, QFont  # type: ignore
+from PySide6.QtCore import Qt
 from src.image_classifier.classification import Classification
 
 
@@ -19,7 +20,7 @@ LABEL_COLORS = {
 BORDER_RADIUS = 5
 
 
-class PainterClassification:
+class PainterClassifications:
     def __init__(self, painter: QPainter):
         self._painter = painter
         self._setup_painter()
@@ -55,6 +56,7 @@ class PainterClassification:
         pen = QPen(color)
         pen.setWidth(BOUNDING_BOX_WIDTH)
         self._painter.setPen(pen)
+        self._painter.setBrush(Qt.NoBrush)
         self._painter.drawRoundedRect(x, y, width, height, BORDER_RADIUS, BORDER_RADIUS)
 
     def _draw_label(
@@ -76,12 +78,15 @@ class PainterClassification:
         )
 
         background_color = LABEL_COLORS.get(classification.label, DEFAULT_LABEL_COLOR)
-        self._painter.fillRect(
+        self._painter.setPen(Qt.NoPen)
+        self._painter.setBrush(background_color)
+        self._painter.drawRoundedRect(
             text_x - LABEL_PADDING,
             text_y - text_height - LABEL_PADDING,
             text_width + 2 * LABEL_PADDING,
             text_height + 2 * LABEL_PADDING,
-            background_color,
+            BORDER_RADIUS,
+            BORDER_RADIUS,
         )
 
         self._painter.setPen(DEFAULT_TEXT_COLOR)

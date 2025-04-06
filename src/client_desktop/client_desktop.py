@@ -30,6 +30,7 @@ class DesktopClient(LifeCycle):
 
         self._device_camera: DeviceCamera = IndexedDeviceCamera(
             logger=self._logger,
+            device_id=0,
         )
 
         self._smart_door = SmartDoor(
