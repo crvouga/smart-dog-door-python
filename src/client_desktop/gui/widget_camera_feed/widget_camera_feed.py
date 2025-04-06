@@ -1,10 +1,11 @@
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel  # type: ignore
-from PySide6.QtCore import Qt, QTimer, QThread, Signal, QObject  # type: ignore
-from PySide6.QtGui import QImage, QPixmap, QPainter, QPen, QColor  # type: ignore
+from PySide6.QtCore import Qt, QThread  # type: ignore
+from PySide6.QtGui import QImage  # type: ignore
 from src.device_camera.interface import DeviceCamera
 from src.image_classifier.classification import Classification
 from typing import List
-from .painter_classification import PainterClassification
+from .painter_disconnected import PainterDisconnected
+from .painter_connected import PainterConnected
 from .object_camera_worker import ObjectCameraWorker
 
 
@@ -13,8 +14,9 @@ class WidgetCameraFeed(QWidget):
     _feed_label: QLabel
     _worker: ObjectCameraWorker
     _thread: QThread
-    _classifications: List[Classification]
     _is_connected: bool
+    _painter_disconnected: PainterDisconnected
+    _painter_connected: PainterConnected
 
     def __init__(
         self,
@@ -27,7 +29,6 @@ class WidgetCameraFeed(QWidget):
     ):
         super().__init__()
         self._device_camera = device_camera
-        self._classifications = []
         self._is_connected = True
         self._setup_geometry(x=x, y=y, width=width, height=height)
         self._setup_layout()
@@ -43,6 +44,8 @@ class WidgetCameraFeed(QWidget):
         self._feed_label = QLabel()
         self._feed_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(self._feed_label)
+        self._painter_disconnected = PainterDisconnected(self._feed_label)
+        self._painter_connected = PainterConnected(self._feed_label)
 
     def _setup_camera_worker(self, fps: int) -> None:
         self._thread = QThread()
@@ -57,53 +60,10 @@ class WidgetCameraFeed(QWidget):
             self._show_disconnected_ui()
             return
 
-        original_pixmap = QPixmap.fromImage(q_image)
-        scaled_pixmap = original_pixmap.scaled(
-            self._feed_label.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation
-        )
-
-        orig_w = original_pixmap.width()
-        orig_h = original_pixmap.height()
-        scaled_w = scaled_pixmap.width()
-        scaled_h = scaled_pixmap.height()
-
-        if orig_w <= 0 or orig_h <= 0 or scaled_w <= 0 or scaled_h <= 0:
-            self._feed_label.setPixmap(scaled_pixmap)
-            return
-
-        scale_x = scaled_w / orig_w
-        scale_y = scaled_h / orig_h
-
-        painter = QPainter(scaled_pixmap)
-        painter_classification = PainterClassification(painter)
-
-        for classification in self._classifications:
-            painter_classification.draw(classification, scale_x, scale_y)
-
-        painter.end()
-        self._feed_label.setPixmap(scaled_pixmap)
+        self._painter_connected.draw(q_image)
 
     def _show_disconnected_ui(self) -> None:
-        # Create a red background with "Camera Disconnected" text
-        pixmap = QPixmap(self._feed_label.size())
-        pixmap.fill(QColor(255, 0, 0, 50))  # Semi-transparent red
-
-        painter = QPainter(pixmap)
-        painter.setPen(QColor(255, 255, 255))
-        painter.setFont(self._feed_label.font())
-
-        text = "Camera Disconnected"
-        metrics = painter.fontMetrics()
-        text_width = metrics.horizontalAdvance(text)
-        text_height = metrics.height()
-
-        x = (pixmap.width() - text_width) // 2
-        y = (pixmap.height() + text_height) // 2
-
-        painter.drawText(x, y, text)
-        painter.end()
-
-        self._feed_label.setPixmap(pixmap)
+        self._painter_disconnected.draw()
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
@@ -115,7 +75,7 @@ class WidgetCameraFeed(QWidget):
         super().closeEvent(event)
 
     def set_classifications(self, classifications: List[Classification]) -> None:
-        self._classifications = classifications
+        self._painter_connected.set_classifications(classifications)
 
     def set_is_connected(self, is_connected: bool) -> None:
         self._is_connected = is_connected
