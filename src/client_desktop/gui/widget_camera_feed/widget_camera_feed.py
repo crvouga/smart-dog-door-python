@@ -14,6 +14,7 @@ class WidgetCameraFeed(QWidget):
     _worker: ObjectCameraWorker
     _thread: QThread
     _classifications: List[Classification]
+    _is_connected: bool
 
     def __init__(
         self,
@@ -27,6 +28,7 @@ class WidgetCameraFeed(QWidget):
         super().__init__()
         self._device_camera = device_camera
         self._classifications = []
+        self._is_connected = True
         self._setup_geometry(x=x, y=y, width=width, height=height)
         self._setup_layout()
         self._setup_camera_worker(fps=fps)
@@ -51,6 +53,10 @@ class WidgetCameraFeed(QWidget):
         self._thread.start()
 
     def _update_feed(self, q_image: QImage):
+        if not self._is_connected:
+            self._show_disconnected_ui()
+            return
+
         original_pixmap = QPixmap.fromImage(q_image)
         scaled_pixmap = original_pixmap.scaled(
             self._feed_label.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation
@@ -77,6 +83,28 @@ class WidgetCameraFeed(QWidget):
         painter.end()
         self._feed_label.setPixmap(scaled_pixmap)
 
+    def _show_disconnected_ui(self) -> None:
+        # Create a red background with "Camera Disconnected" text
+        pixmap = QPixmap(self._feed_label.size())
+        pixmap.fill(QColor(255, 0, 0, 50))  # Semi-transparent red
+
+        painter = QPainter(pixmap)
+        painter.setPen(QColor(255, 255, 255))
+        painter.setFont(self._feed_label.font())
+
+        text = "Camera Disconnected"
+        metrics = painter.fontMetrics()
+        text_width = metrics.horizontalAdvance(text)
+        text_height = metrics.height()
+
+        x = (pixmap.width() - text_width) // 2
+        y = (pixmap.height() + text_height) // 2
+
+        painter.drawText(x, y, text)
+        painter.end()
+
+        self._feed_label.setPixmap(pixmap)
+
     def resizeEvent(self, event):
         super().resizeEvent(event)
 
@@ -88,3 +116,8 @@ class WidgetCameraFeed(QWidget):
 
     def set_classifications(self, classifications: List[Classification]) -> None:
         self._classifications = classifications
+
+    def set_is_connected(self, is_connected: bool) -> None:
+        self._is_connected = is_connected
+        if not is_connected:
+            self._show_disconnected_ui()

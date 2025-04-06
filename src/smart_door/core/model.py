@@ -67,3 +67,9 @@ class ModelReady(_ModelBase):
 
 
 Model = Union[ModelConnecting, ModelReady]
+
+
+def is_camera_connected(model: Model) -> bool:
+    if isinstance(model, ModelConnecting):
+        return model.camera == ConnectionState.Connected
+    return True

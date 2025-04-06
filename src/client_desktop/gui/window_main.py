@@ -8,7 +8,7 @@ from PySide6.QtGui import QPalette, QColor  # type: ignore
 from .widget_camera_feed.widget_camera_feed import WidgetCameraFeed
 from src.device_camera.interface import DeviceCamera
 from src.smart_door.smart_door import SmartDoor
-from src.smart_door.core.model import Model, ModelReady
+from src.smart_door.core.model import Model, ModelReady, is_camera_connected
 
 
 class WindowMain(QMainWindow):
@@ -67,3 +67,8 @@ class WindowMain(QMainWindow):
             )
 
         self._smart_door.models().sub(_set_classifications)
+
+        def _set_is_connected(model: Model):
+            self._camera_feed.set_is_connected(is_camera_connected(model))
+
+        self._smart_door.models().sub(_set_is_connected)
