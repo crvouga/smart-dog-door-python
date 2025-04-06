@@ -8,6 +8,7 @@ from .model import (
 )
 from .msg import (
     Msg,
+    MsgTick,
 )
 from .effect import (
     Effect,
@@ -17,8 +18,37 @@ from .effect import (
 def transition_ready_door(
     model: ModelReady, door: ModelDoor, msg: Msg
 ) -> tuple[ModelDoor, list[Effect]]:
+    effects_new: list[Effect] = []
 
-    should_open = does_have_open_list_objects(
+    door, effects = _transition_door_will_open(model=model, door=door, msg=msg)
+    effects_new.extend(effects)
+
+    door, effects = _transition_from_will_open_to_open(model=model, door=door, msg=msg)
+    effects_new.extend(effects)
+
+    return door, effects_new
+
+
+def _transition_from_will_open_to_open(
+    model: ModelReady, door: ModelDoor, msg: Msg
+) -> tuple[ModelDoor, list[Effect]]:
+    if door.state != DoorState.WillOpen:
+        return door, []
+
+    if not isinstance(msg, MsgTick):
+        return door, []
+
+    elapsed_time = msg.happened_at - door.state_start_time
+    if elapsed_time < model.config.minimal_duration_will_open:
+        return door, []
+
+    return replace(door, state=DoorState.Open), []
+
+
+def _transition_door_will_open(
+    model: ModelReady, door: ModelDoor, msg: Msg
+) -> tuple[ModelDoor, list[Effect]]:
+    should_open = _does_have_open_list_objects(
         classifications=model.camera.latest_classification,
         open_list=model.config.classification_open_list,
     )
@@ -32,7 +62,7 @@ def transition_ready_door(
     return door, []
 
 
-def does_have_open_list_objects(
+def _does_have_open_list_objects(
     classifications: list[Classification],
     open_list: list[ClassificationConfig],
 ) -> bool:
