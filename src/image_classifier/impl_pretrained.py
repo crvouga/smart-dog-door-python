@@ -1,8 +1,7 @@
 import timm  # type: ignore
 import torch  # type: ignore
-from PIL import Image as PILImage
 import torchvision.transforms as T  # type: ignore
-from typing import List, Iterator, Dict, Tuple
+from typing import List
 import logging
 
 from src.image.image import Image
@@ -10,12 +9,24 @@ from src.image_classifier.bounding_box import (
     BoundingBox,
 )  # Keep for interface compatibility
 from .interface import ImageClassifier, Classification
+from enum import Enum
 
 # --- Configuration ---
 
 # Choose a powerful model from timm (see timm docs for options)
+
+
+class PretrainedModelName(Enum):
+    VIT_LARGE = "vit_large_patch16_224.augreg_in21k_ft_in1k"
+    SWIN_LARGE = "swin_large_patch4_window7_224.ms_in22k_ft_in1k"
+    CONVNEXT_LARGE = "convnext_large.fb_in22k_ft_in1k"
+    EFFICIENTNET_B3 = "tf_efficientnet_b3"
+
+
 # Examples: 'vit_large_patch16_224.augreg_in21k_ft_in1k', 'swin_large_patch4_window7_224.ms_in22k_ft_in1k', 'convnext_large.fb_in22k_ft_in1k'
-DEFAULT_MODEL_NAME = "vit_large_patch16_224.augreg_in21k_ft_in1k"
+# DEFAULT_MODEL_NAME = "vit_large_patch16_224.augreg_in
+DEFAULT_MODEL_NAME = PretrainedModelName.EFFICIENTNET_B3
+
 
 # Define ImageNet indices roughly corresponding to cats and dogs
 # These can vary slightly. For precise mapping, consult the specific model's documentation or class map.
@@ -26,10 +37,10 @@ DOG_INDICES = list(range(151, 276))
 # --- Implementation ---
 
 
-class PretrainedClassifier(ImageClassifier):
+class PretrainedImageClassifier(ImageClassifier):
     def __init__(
         self,
-        model_name: str = DEFAULT_MODEL_NAME,
+        model_name: PretrainedModelName = DEFAULT_MODEL_NAME,
         device: str = "cuda" if torch.cuda.is_available() else "cpu",
         logger: logging.Logger = logging.getLogger(__name__),
     ) -> None:
@@ -43,7 +54,7 @@ class PretrainedClassifier(ImageClassifier):
         self._logger.info(f"Loading pre-trained model: {model_name}")
 
         try:
-            self._model = timm.create_model(model_name, pretrained=True)
+            self._model = timm.create_model(model_name.value, pretrained=True)
             self._model = self._model.to(self._device)
             self._model.eval()  # Set model to evaluation mode
 
@@ -95,36 +106,34 @@ class PretrainedClassifier(ImageClassifier):
                     prob_cat = torch.sum(probabilities[self._cat_indices]).item()
                     prob_dog = torch.sum(probabilities[self._dog_indices]).item()
 
-                    label = "unknown"
-                    confidence = 0.0
-
-                    if prob_cat > prob_dog:
-                        label = "cat"
-                        confidence = prob_cat
-                    elif prob_dog > prob_cat:
-                        label = "dog"
-                        confidence = prob_dog
-                    # Else: remains unknown with 0 confidence
-
-                    self._logger.debug(
-                        f"Image {i}: Cat Prob={prob_cat:.4f}, Dog Prob={prob_dog:.4f} -> Label='{label}', Conf={confidence:.4f}"
-                    )
-
                     # Create placeholder bounding box covering the whole image (0.0 to 1.0)
                     # as this classifier doesn't provide localization.
                     placeholder_bbox = BoundingBox(
                         x_min=0.0, y_min=0.0, x_max=1.0, y_max=1.0
                     )
 
-                    # Only add classification if label is known
-                    if label != "unknown":
+                    # Add classifications for both cat and dog if their probabilities are significant
+                    if prob_cat > 0.1:  # Threshold for cat detection
                         classifications.append(
                             Classification(
-                                label=label,
-                                weight=confidence,
+                                label="cat",
+                                weight=prob_cat,
                                 bounding_box=placeholder_bbox,
                             )
                         )
+
+                    if prob_dog > 0.1:  # Threshold for dog detection
+                        classifications.append(
+                            Classification(
+                                label="dog",
+                                weight=prob_dog,
+                                bounding_box=placeholder_bbox,
+                            )
+                        )
+
+                    self._logger.debug(
+                        f"Image {i}: Cat Prob={prob_cat:.4f}, Dog Prob={prob_dog:.4f}"
+                    )
 
                 except Exception as e:
                     self._logger.error(

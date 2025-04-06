@@ -1,6 +1,10 @@
 from src.client_desktop.gui.gui import Gui
 from src.device_camera.impl_indexed import IndexedDeviceCamera
 from src.device_door.impl_fake import FakeDeviceDoor
+from src.image_classifier.impl_pretrained import (
+    PretrainedImageClassifier,
+    PretrainedModelName,
+)
 from src.image_classifier.impl_yolo import YoloImageClassifier, YoloModelSize
 from src.library.life_cycle import LifeCycle
 from src.smart_door.smart_door import SmartDoor
@@ -22,8 +26,12 @@ class DesktopClient(LifeCycle):
     def __init__(self, logger: Logger) -> None:
         self._logger = logger.getChild("client_desktop")
 
-        self._image_classifier = YoloImageClassifier(
-            model_size=YoloModelSize.EXTRA_LARGE
+        # self._image_classifier = YoloImageClassifier(
+        #     model_size=YoloModelSize.EXTRA_LARGE
+        # )
+
+        self._image_classifier = PretrainedImageClassifier(
+            model_name=PretrainedModelName.EFFICIENTNET_B3
         )
 
         self._device_door = FakeDeviceDoor(logger=self._logger)

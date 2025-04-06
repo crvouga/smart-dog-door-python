@@ -7,6 +7,7 @@
     "convnext",
     "dateutil",
     "docopt",
+    "efficientnet",
     "exceptiongroup",
     "filelock",
     "fonttools",
