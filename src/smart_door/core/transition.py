@@ -1,6 +1,7 @@
 from datetime import datetime
 from src.device_camera.event import EventCameraConnected, EventCameraDisconnected
 from src.device_door.event import EventDoorConnected, EventDoorDisconnected
+from src.smart_door.core.transition_ready_door import transition_ready_door
 from .model import (
     Model,
     ModelConnecting,
@@ -15,18 +16,14 @@ from .msg import (
     Msg,
     MsgCameraEvent,
     MsgDoorEvent,
-    MsgImageCaptureDone,
-    MsgImageClassifyDone,
-    MsgTick,
 )
 from .effect import (
     Effect,
-    EffectCaptureImage,
-    EffectClassifyImages,
     EffectSubscribeCamera,
     EffectSubscribeDoor,
     EffectSubscribeTick,
 )
+from .transition_ready_camera import transition_ready_camera
 
 
 def init() -> tuple[Model, list[Effect]]:
@@ -147,100 +144,15 @@ def _transition_ready(model: ModelReady, msg: Msg) -> tuple[Model, list[Effect]]
 def _transition_ready_main(model: ModelReady, msg: Msg) -> tuple[Model, list[Effect]]:
     effects_new: list[Effect] = []
 
-    camera, effects = _transition_ready_camera(
-        model=model, camera=model.camera, msg=msg
-    )
+    camera, effects = transition_ready_camera(model=model, camera=model.camera, msg=msg)
+    effects_new.extend(effects)
+
+    door, effects = transition_ready_door(model=model, door=model.door, msg=msg)
     effects_new.extend(effects)
 
     model_new = ModelReady(
         camera=camera,
-        door=model.door,
+        door=door,
     )
 
     return model_new, effects_new
-
-
-def _transition_ready_camera(
-    model: ModelReady, camera: ModelCamera, msg: Msg
-) -> tuple[ModelCamera, list[Effect]]:
-    effects_new: list[Effect] = []
-
-    camera_new, effects = _transition_camera_idle_to_capturing(
-        model=model, camera=camera, msg=msg
-    )
-    effects_new.extend(effects)
-
-    camera_new, effects = _transition_camera_capturing_to_classifying(
-        camera=camera_new, msg=msg
-    )
-    effects_new.extend(effects)
-
-    camera_new, effects = _transition_camera_classifying_to_idle(
-        camera=camera_new, msg=msg
-    )
-    effects_new.extend(effects)
-
-    return camera_new, effects_new
-
-
-def _transition_camera_idle_to_capturing(
-    model: ModelReady, camera: ModelCamera, msg: Msg
-) -> tuple[ModelCamera, list[Effect]]:
-    if not isinstance(msg, MsgTick):
-        return camera, []
-
-    if camera.state != CameraState.Idle:
-        return camera, []
-
-    should_capture = (
-        camera.state_start_time + model.config.minimal_rate_camera_process
-        < msg.happened_at
-    )
-
-    if not should_capture:
-        return camera, []
-
-    return (
-        ModelCamera(
-            state=CameraState.Capturing,
-            state_start_time=msg.happened_at,
-            latest_classification=camera.latest_classification,
-        ),
-        [EffectCaptureImage()],
-    )
-
-
-def _transition_camera_capturing_to_classifying(
-    camera: ModelCamera, msg: Msg
-) -> tuple[ModelCamera, list[Effect]]:
-    if not isinstance(msg, MsgImageCaptureDone):
-        return camera, []
-
-    if camera.state != CameraState.Capturing:
-        return camera, []
-
-    camera_new = ModelCamera(
-        state=CameraState.Classifying,
-        state_start_time=msg.happened_at,
-        latest_classification=camera.latest_classification,
-    )
-
-    return camera_new, [EffectClassifyImages(images=msg.images)]
-
-
-def _transition_camera_classifying_to_idle(
-    camera: ModelCamera, msg: Msg
-) -> tuple[ModelCamera, list[Effect]]:
-    if not isinstance(msg, MsgImageClassifyDone):
-        return camera, []
-
-    if camera.state != CameraState.Classifying:
-        return camera, []
-
-    camera_new = ModelCamera(
-        state=CameraState.Idle,
-        state_start_time=msg.happened_at,
-        latest_classification=msg.classifications,
-    )
-
-    return camera_new, []

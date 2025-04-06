@@ -1,9 +1,9 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 @dataclass
 class BoundingBox:
-    x_min: float
-    y_min: float
-    x_max: float
-    y_max: float
+    x_min: float = field(default=0)
+    y_min: float = field(default=0)
+    x_max: float = field(default=0)
+    y_max: float = field(default=0)
