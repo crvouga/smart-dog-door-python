@@ -2,25 +2,35 @@ from PySide6.QtGui import QPainter, QPen, QColor, QFont  # type: ignore
 from src.image_classifier.classification import Classification
 
 
-class PainterClassification:
-    _LABEL_COLORS = {
-        "dog": QColor(0, 128, 0),  # darker green
-        "cat": QColor(255, 0, 0),  # red
-    }
+DEFAULT_BOUNDING_BOX_COLOR = QColor(255, 0, 0)
+DEFAULT_LABEL_COLOR = QColor(255, 0, 0)
+DEFAULT_TEXT_COLOR = QColor(255, 255, 255)
+BOUNDING_BOX_WIDTH = 3
+FONT_SIZE = 12
+LABEL_PADDING = 4
+LABEL_OFFSET_TOP = 5
+LABEL_OFFSET_BOTTOM = 15
+LABEL_THRESHOLD = 10
+LABEL_TEXT_FORMAT = "{label} ({weight:.2f})"
+LABEL_COLORS = {
+    "dog": QColor(0, 128, 0),
+    "cat": QColor(255, 0, 0),
+}
 
+
+class PainterClassification:
     def __init__(self, painter: QPainter):
         self._painter = painter
         self._setup_painter()
 
     def _setup_painter(self) -> None:
-        # Default color will be used for unknown labels
-        pen = QPen(QColor(255, 0, 0))
-        pen.setWidth(2)
+        pen = QPen(DEFAULT_BOUNDING_BOX_COLOR)
+        pen.setWidth(BOUNDING_BOX_WIDTH)
         self._painter.setPen(pen)
-        # Set a bold font for better visibility
+
         font = QFont()
         font.setBold(True)
-        font.setPointSize(12)  # Increased font size
+        font.setPointSize(FONT_SIZE)
         self._painter.setFont(font)
 
     def draw(
@@ -40,41 +50,46 @@ class PainterClassification:
     def _draw_bounding_box(
         self, classification: Classification, x: int, y: int, width: int, height: int
     ) -> None:
-        # Set color based on label
-        color = self._LABEL_COLORS.get(classification.label, QColor(255, 0, 0))
+        color = LABEL_COLORS.get(classification.label, DEFAULT_BOUNDING_BOX_COLOR)
         pen = QPen(color)
-        pen.setWidth(2)
+        pen.setWidth(BOUNDING_BOX_WIDTH)
         self._painter.setPen(pen)
         self._painter.drawRect(x, y, width, height)
 
     def _draw_label(
         self, classification: Classification, rect_x: int, rect_y: int, rect_w: int
     ) -> None:
-        label_text = f"{classification.label} ({classification.weight:.2f})"
+        label_text = LABEL_TEXT_FORMAT.format(
+            label=classification.label, weight=classification.weight
+        )
 
-        # Calculate text metrics
         metrics = self._painter.fontMetrics()
         text_width = metrics.horizontalAdvance(label_text)
         text_height = metrics.height()
-        padding = 4
 
-        # Center the label over the bounding box
         text_x = rect_x + (rect_w - text_width) // 2
-        text_y = rect_y - 5 if rect_y > 10 else rect_y + 15
-
-        # Draw background
-        background_color = self._LABEL_COLORS.get(
-            classification.label, QColor(255, 0, 0)
+        text_y = (
+            rect_y - LABEL_OFFSET_TOP
+            if rect_y > LABEL_THRESHOLD
+            else rect_y + LABEL_OFFSET_BOTTOM
         )
+
+        background_color = LABEL_COLORS.get(classification.label, DEFAULT_LABEL_COLOR)
         self._painter.fillRect(
-            text_x - padding,
-            text_y - text_height - padding,
-            text_width + 2 * padding,
-            text_height + 2 * padding,
+            text_x - LABEL_PADDING,
+            text_y - text_height - LABEL_PADDING,
+            text_width + 2 * LABEL_PADDING,
+            text_height + 2 * LABEL_PADDING,
             background_color,
         )
 
-        # Draw white text
-        white = QColor(255, 255, 255)
-        self._painter.setPen(white)
-        self._painter.drawText(text_x, text_y, label_text)
+        self._painter.setPen(DEFAULT_TEXT_COLOR)
+
+        self._painter.drawText(
+            text_x - LABEL_PADDING + (text_width + 2 * LABEL_PADDING - text_width) // 2,
+            text_y
+            - LABEL_PADDING
+            + (text_height + 2 * LABEL_PADDING - text_height) // 2
+            - 2,
+            label_text,
+        )
