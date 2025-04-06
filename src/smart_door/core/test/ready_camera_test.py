@@ -8,11 +8,11 @@ from src.smart_door.core import (
     MsgImageClassifyDone,
 )
 from src.smart_door.core.msg import MsgTick
-from src.smart_door.core.test.fixture import Fixture
+from src.smart_door.core.test.fixture import BaseFixture
 
 
 def test_transition_camera_to_capturing_state() -> None:
-    f = Fixture()
+    f = BaseFixture()
 
     model, _ = f.init()
 
@@ -32,7 +32,7 @@ def test_transition_camera_to_capturing_state() -> None:
 
 
 def test_do_not_transition_to_capturing_state_if_not_enough_time_has_passed() -> None:
-    f = Fixture()
+    f = BaseFixture()
 
     model, _ = f.init()
 
@@ -52,7 +52,7 @@ def test_do_not_transition_to_capturing_state_if_not_enough_time_has_passed() ->
 
 
 def test_transition_to_classifying_state_after_capturing_image() -> None:
-    f = Fixture()
+    f = BaseFixture()
 
     model, _ = f.init()
 
@@ -80,7 +80,7 @@ def test_transition_to_classifying_state_after_capturing_image() -> None:
 
 
 def test_transition_to_idle_state_after_classifying_image() -> None:
-    f = Fixture()
+    f = BaseFixture()
 
     model, _ = f.init()
 

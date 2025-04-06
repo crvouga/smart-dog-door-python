@@ -2,11 +2,11 @@ from src.device_camera.event import EventCameraConnected, EventCameraDisconnecte
 from src.device_door.event import EventDoorConnected, EventDoorDisconnected
 from src.smart_door.core.model import ConnectionState, ModelConnecting, ModelReady
 from src.smart_door.core.msg import MsgCameraEvent, MsgDoorEvent
-from src.smart_door.core.test.fixture import Fixture
+from src.smart_door.core.test.fixture import BaseFixture
 
 
 def test_transition_to_ready_state() -> None:
-    f = Fixture()
+    f = BaseFixture()
 
     model, _ = f.init()
 
@@ -24,7 +24,7 @@ def test_transition_to_ready_state() -> None:
 
 
 def test_transition_to_connecting_state_when_camera_disconnected() -> None:
-    f = Fixture()
+    f = BaseFixture()
 
     model, _ = f.init()
 
@@ -41,7 +41,7 @@ def test_transition_to_connecting_state_when_camera_disconnected() -> None:
 
 
 def test_transition_to_connecting_state_when_door_disconnected() -> None:
-    f = Fixture()
+    f = BaseFixture()
 
     model, _ = f.init()
 

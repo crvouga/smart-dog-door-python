@@ -16,7 +16,7 @@ from src.smart_door.core.model import Model
 from src.smart_door.core.msg import Msg
 
 
-class Fixture:
+class BaseFixture:
     def __init__(self) -> None:
         self.logger = Logger("test")
         self.device_camera = FakeDeviceCamera(logger=self.logger)

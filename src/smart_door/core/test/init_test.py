@@ -4,11 +4,11 @@ from src.smart_door.core import (
     EffectSubscribeDoor,
     EffectSubscribeTick,
 )
-from src.smart_door.core.test.fixture import Fixture
+from src.smart_door.core.test.fixture import BaseFixture
 
 
 def test_init() -> None:
-    f = Fixture()
+    f = BaseFixture()
 
     model, effects = f.init()
 
