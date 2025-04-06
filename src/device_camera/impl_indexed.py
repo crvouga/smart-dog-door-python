@@ -163,12 +163,17 @@ class IndexedDeviceCamera(DeviceCamera):
             return self._connect_camera()
 
     def _read_and_store_frame(self) -> bool:
-        ret, frame = self._cap.read()
-        if not ret:
-            self._logger.warning("Failed to read frame from camera")
+        try:
+            ret, frame = self._cap.read()
+            if not ret:
+                self._logger.warning("Failed to read frame from camera")
+                self._handle_frame_read_failure()
+                return False
+
+            with self._lock:
+                self._latest_frame = frame
+            return True
+        except Exception as e:
+            self._logger.error(f"Error reading frame: {e}")
             self._handle_frame_read_failure()
             return False
-
-        with self._lock:
-            self._latest_frame = frame
-        return True

@@ -28,17 +28,17 @@ class Fixture:
     def transition(self, model: Model, msg: Msg) -> tuple[Model, list[Effect]]:
         return transition(model=model, msg=msg)
 
-    def transition_to_ready_state(self, model: Model) -> ModelReady:
+    def transition_to_ready_state(self, model: Model) -> tuple[Model, list[Effect]]:
         model, _ = transition(
             model=model,
             msg=MsgCameraEvent(camera_event=EventCameraConnected()),
         )
 
-        model, _ = transition(
+        model, effects = transition(
             model=model,
             msg=MsgDoorEvent(door_event=EventDoorConnected()),
         )
 
         assert isinstance(model, ModelReady)
 
-        return model
+        return model, effects

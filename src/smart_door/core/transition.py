@@ -117,6 +117,34 @@ def _transition_connecting_camera(
 
 
 def _transition_ready(model: ModelReady, msg: Msg) -> tuple[Model, list[Effect]]:
+    if isinstance(msg, MsgCameraEvent) and isinstance(
+        msg.camera_event, EventCameraDisconnected
+    ):
+        return (
+            ModelConnecting(
+                type="connecting",
+                camera=ConnectionState.Connecting,
+                door=ConnectionState.Connected,
+            ),
+            [],
+        )
+
+    if isinstance(msg, MsgDoorEvent) and isinstance(
+        msg.door_event, EventDoorDisconnected
+    ):
+        return (
+            ModelConnecting(
+                type="connecting",
+                camera=ConnectionState.Connected,
+                door=ConnectionState.Connecting,
+            ),
+            [],
+        )
+
+    return _transition_ready_main(model=model, msg=msg)
+
+
+def _transition_ready_main(model: ModelReady, msg: Msg) -> tuple[Model, list[Effect]]:
     effects_new: list[Effect] = []
 
     camera, effects = _transition_ready_camera(
