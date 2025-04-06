@@ -163,9 +163,12 @@ class IndexedDeviceCamera(DeviceCamera):
             return self._connect_camera()
 
     def _read_and_store_frame(self) -> bool:
+        if not self._cap:
+            return False
+
         try:
             ret, frame = self._cap.read()
-            if not ret:
+            if not ret or frame is None:
                 self._logger.warning("Failed to read frame from camera")
                 self._handle_frame_read_failure()
                 return False

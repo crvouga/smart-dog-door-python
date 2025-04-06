@@ -1,8 +1,10 @@
 {
   "cSpell.words": [
+    "augreg",
     "certifi",
     "colorama",
     "contourpy",
+    "convnext",
     "dateutil",
     "docopt",
     "exceptiongroup",
@@ -37,6 +39,7 @@
     "RTSP",
     "scipy",
     "seaborn",
+    "swin",
     "sympy",
     "thop",
     "tomli",

@@ -1,5 +1,5 @@
 from PySide6.QtGui import QPainter, QPen, QColor, QFont  # type: ignore
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt  # type: ignore
 from src.image_classifier.classification import Classification
 
 

@@ -16,7 +16,7 @@ def test_transition_camera_to_capturing_state() -> None:
 
     model, _ = f.init()
 
-    model = f.transition_to_ready_state(model=model)
+    model, _ = f.transition_to_ready_state(model=model)
 
     model, effects = f.transition(
         model=model,
@@ -36,7 +36,7 @@ def test_do_not_transition_to_capturing_state_if_not_enough_time_has_passed() ->
 
     model, _ = f.init()
 
-    model = f.transition_to_ready_state(model=model)
+    model, _ = f.transition_to_ready_state(model=model)
 
     model, _ = f.transition(
         model=model,
@@ -56,7 +56,7 @@ def test_transition_to_classifying_state_after_capturing_image() -> None:
 
     model, _ = f.init()
 
-    model = f.transition_to_ready_state(model=model)
+    model, _ = f.transition_to_ready_state(model=model)
 
     model, _ = f.transition(
         model=model,
@@ -84,7 +84,7 @@ def test_transition_to_idle_state_after_classifying_image() -> None:
 
     model, _ = f.init()
 
-    model = f.transition_to_ready_state(model=model)
+    model, _ = f.transition_to_ready_state(model=model)
 
     model, _ = f.transition(
         model=model,
