@@ -4,7 +4,7 @@ from PySide6.QtGui import QImage  # type: ignore
 from src.device_camera.interface import DeviceCamera
 from src.image_classifier.classification import Classification
 from typing import List
-from .painter_disconnected import PainterDisconnected
+from .painter_loading import PainterLoading
 from .painter_connected import PainterConnected
 from .object_camera_worker import ObjectCameraWorker
 
@@ -15,8 +15,8 @@ class WidgetCameraFeed(QWidget):
     _worker: ObjectCameraWorker
     _thread: QThread
     _is_connected: bool
-    _painter_disconnected: PainterDisconnected
     _painter_connected: PainterConnected
+    _painter_loading: PainterLoading
 
     def __init__(
         self,
@@ -33,6 +33,7 @@ class WidgetCameraFeed(QWidget):
         self._setup_geometry(x=x, y=y, width=width, height=height)
         self._setup_layout()
         self._setup_camera_worker(fps=fps)
+        self._show_loading_ui()
 
     def _setup_geometry(self, x: int, y: int, width: int, height: int) -> None:
         self.setGeometry(x, y, width, height)
@@ -44,8 +45,8 @@ class WidgetCameraFeed(QWidget):
         self._feed_label = QLabel()
         self._feed_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(self._feed_label)
-        self._painter_disconnected = PainterDisconnected(self._feed_label)
         self._painter_connected = PainterConnected(self._feed_label)
+        self._painter_loading = PainterLoading(self._feed_label)
 
     def _setup_camera_worker(self, fps: int) -> None:
         self._thread = QThread()
@@ -57,13 +58,13 @@ class WidgetCameraFeed(QWidget):
 
     def _update_feed(self, q_image: QImage):
         if not self._is_connected:
-            self._show_disconnected_ui()
+            self._show_loading_ui()
             return
 
         self._painter_connected.draw(q_image)
 
-    def _show_disconnected_ui(self) -> None:
-        self._painter_disconnected.draw()
+    def _show_loading_ui(self) -> None:
+        self._painter_loading.draw()
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
@@ -80,4 +81,4 @@ class WidgetCameraFeed(QWidget):
     def set_is_connected(self, is_connected: bool) -> None:
         self._is_connected = is_connected
         if not is_connected:
-            self._show_disconnected_ui()
+            self._show_loading_ui()
