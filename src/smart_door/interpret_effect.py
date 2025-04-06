@@ -1,4 +1,5 @@
 from src.device_camera.event import EventCamera
+from src.smart_door.core.model import Model
 from .core import (
     Effect,
     Msg,
@@ -22,7 +23,9 @@ from .deps import Deps
 from src.library.time import ticks
 
 
-def interpret_effect(deps: Deps, effect: Effect, msg_queue: queue.Queue[Msg]) -> None:
+def interpret_effect(
+    deps: Deps, model: Model, effect: Effect, msg_queue: queue.Queue[Msg]
+) -> None:
     if isinstance(effect, EffectSubscribeCamera):
         deps.device_camera.events().sub(
             lambda camera_event: msg_queue.put(
@@ -36,7 +39,7 @@ def interpret_effect(deps: Deps, effect: Effect, msg_queue: queue.Queue[Msg]) ->
         )
 
     if isinstance(effect, EffectSubscribeTick):
-        ticks(interval_seconds=1).sub(
+        ticks(interval=model.config.tick_rate).sub(
             lambda now: msg_queue.put(MsgTick(happened_at=now))
         )
 

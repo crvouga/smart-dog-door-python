@@ -3,6 +3,7 @@ from src.device_camera.impl_indexed import IndexedDeviceCamera
 from src.device_door.impl_fake import FakeDeviceDoor
 from src.image_classifier.impl_yolo import YoloImageClassifier, YoloModelSize
 from src.library.life_cycle import LifeCycle
+from src.smart_door.config import Config
 from src.smart_door.smart_door import SmartDoor
 from src.image_classifier.interface import ImageClassifier
 from src.device_camera.interface import DeviceCamera

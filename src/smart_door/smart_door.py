@@ -6,6 +6,7 @@ from src.device_door.interface import DeviceDoor
 from src.library.life_cycle import LifeCycle
 from src.library.pub_sub import Sub
 from src.library.state_machine import StateMachine
+from src.smart_door.config import Config
 from src.smart_door.core import transition, init
 from src.smart_door.core.effect import Effect
 from src.smart_door.core.model import Model
@@ -45,8 +46,15 @@ class SmartDoor(LifeCycle):
     def msgs(self) -> Sub[Msg]:
         return self._state_machine.msgs()
 
-    def _interpret_effect(self, effect: Effect, msg_queue: queue.Queue[Msg]) -> None:
-        interpret_effect(deps=self._deps, effect=effect, msg_queue=msg_queue)
+    def _interpret_effect(
+        self, model: Model, effect: Effect, msg_queue: queue.Queue[Msg]
+    ) -> None:
+        interpret_effect(
+            deps=self._deps,
+            model=model,
+            effect=effect,
+            msg_queue=msg_queue,
+        )
 
     def start(self) -> None:
         self._deps.logger.info("Starting")

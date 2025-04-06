@@ -13,7 +13,7 @@ Effect = TypeVar("Effect")
 class StateMachine(Generic[Model, Msg, Effect], LifeCycle):
     _init: Callable[[], tuple[Model, List[Effect]]]
     _transition: Callable[[Model, Msg], tuple[Model, List[Effect]]]
-    _interpret_effect: Callable[[Effect, queue.Queue[Msg]], None]
+    _interpret_effect: Callable[[Model, Effect, queue.Queue[Msg]], None]
     _msg_queue: queue.Queue[Msg]
     _model: Optional[Model]
     _running: bool
@@ -27,7 +27,7 @@ class StateMachine(Generic[Model, Msg, Effect], LifeCycle):
         self,
         init: Callable[[], tuple[Model, List[Effect]]],
         transition: Callable[[Model, Msg], tuple[Model, List[Effect]]],
-        interpret_effect: Callable[[Effect, queue.Queue[Msg]], None],
+        interpret_effect: Callable[[Model, Effect, queue.Queue[Msg]], None],
         logger: logging.Logger,
         should_log: bool = False,
     ) -> None:
@@ -48,7 +48,7 @@ class StateMachine(Generic[Model, Msg, Effect], LifeCycle):
             self._logger.info("Effect: %s", effect)
 
         thread = threading.Thread(
-            target=self._interpret_effect, args=(effect, self._msg_queue)
+            target=self._interpret_effect, args=(self._model, effect, self._msg_queue)
         )
         thread.start()
         thread.join()

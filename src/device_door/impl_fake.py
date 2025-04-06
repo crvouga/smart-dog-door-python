@@ -12,8 +12,8 @@ class FakeDeviceDoor(DeviceDoor):
     def __init__(
         self,
         logger: Logger,
-        latency_start: timedelta = timedelta(seconds=0.3),
-        latency_stop: timedelta = timedelta(seconds=0.3),
+        latency_start: timedelta = timedelta(seconds=0.2),
+        latency_stop: timedelta = timedelta(seconds=0.2),
     ):
         self._is_open = False
         self._logger = logger.getChild("fake_device_door")

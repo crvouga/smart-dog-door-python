@@ -1,6 +1,7 @@
 {
   "cSpell.words": [
     "augreg",
+    "AVFOUNDATION",
     "certifi",
     "colorama",
     "contourpy",
@@ -50,6 +51,8 @@
     "ultralytics",
     "unsub",
     "urllib",
+    "venv",
+    "virtualenv",
     "watchmedo",
     "xyxy",
     "yolov",
