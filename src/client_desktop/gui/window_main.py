@@ -54,7 +54,7 @@ class WindowMain(QMainWindow):
             width=self.width(),
             x=0,
             y=0,
-            fps=30,
+            fps=60,
         )
         self._main_layout.addWidget(self._camera_feed)
 
