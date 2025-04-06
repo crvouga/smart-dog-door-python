@@ -46,7 +46,7 @@ class ModelCamera:
 class DoorState(Enum):
     Closed = auto()
     WillClose = auto()
-    Open = auto()
+    Opened = auto()
     WillOpen = auto()
 
     def __repr__(self) -> str:

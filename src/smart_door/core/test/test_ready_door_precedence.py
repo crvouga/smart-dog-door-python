@@ -36,7 +36,7 @@ def test_close_objects_take_precedence_over_open_objects_when_closed() -> None:
 
 
 def test_close_objects_take_precedence_over_open_objects_when_open() -> None:
-    f = Fixture(door_state=DoorState.Open)
+    f = Fixture(door_state=DoorState.Opened)
     model, _ = f.transition(model=f.model, msg=MsgTick(happened_at=datetime.now()))
 
     assert isinstance(model, ModelReady)

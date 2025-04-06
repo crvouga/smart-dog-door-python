@@ -28,49 +28,61 @@ class Fixture(BaseFixture):
 
 
 def test_transition_to_will_close_state_when_open() -> None:
-    f = Fixture(door_state=DoorState.Open)
-    model, _ = f.transition(model=f.model, msg=MsgTick(happened_at=datetime.now()))
+    f = Fixture(door_state=DoorState.Opened)
+    happened_at = datetime.now()
+    model, _ = f.transition(model=f.model, msg=MsgTick(happened_at=happened_at))
 
     assert isinstance(model, ModelReady)
     assert model.door.state == DoorState.WillClose
+    assert model.door.state_start_time == happened_at
 
 
 def test_stays_in_closed_state() -> None:
     f = Fixture(door_state=DoorState.Closed)
-    model, _ = f.transition(model=f.model, msg=MsgTick(happened_at=datetime.now()))
+    happened_at = datetime.now()
+    model, _ = f.transition(model=f.model, msg=MsgTick(happened_at=happened_at))
 
     assert isinstance(model, ModelReady)
     assert model.door.state == DoorState.Closed
+    assert model.door.state_start_time == f.model.door.state_start_time
 
 
 def test_transition_to_closed_state_if_door_state_is_will_open() -> None:
     f = Fixture(door_state=DoorState.WillOpen)
-    model, _ = f.transition(model=f.model, msg=MsgTick(happened_at=datetime.now()))
+    happened_at = datetime.now()
+    model, _ = f.transition(model=f.model, msg=MsgTick(happened_at=happened_at))
 
     assert isinstance(model, ModelReady)
     assert model.door.state == DoorState.Closed
+    assert model.door.state_start_time == happened_at
 
 
 def test_transition_to_will_open_state_if_door_state_is_open() -> None:
     f = Fixture(door_state=DoorState.WillOpen)
-    model, _ = f.transition(model=f.model, msg=MsgTick(happened_at=datetime.now()))
+    happened_at = datetime.now()
+    model, _ = f.transition(model=f.model, msg=MsgTick(happened_at=happened_at))
 
     assert isinstance(model, ModelReady)
     assert model.door.state == DoorState.Closed
+    assert model.door.state_start_time == happened_at
 
 
 def test_transition_to_will_close_state_to_closed_state_after_minimal_duration_will_close() -> (
     None
 ):
     f = Fixture(door_state=DoorState.WillClose)
+    happened_at = (
+        datetime.now()
+        + f.model.config.minimal_duration_will_close
+        + timedelta(seconds=1)
+    )
 
     model, effects = f.transition(
         model=f.model,
-        msg=MsgTick(
-            happened_at=datetime.now() + f.model.config.minimal_duration_will_close
-        ),
+        msg=MsgTick(happened_at=happened_at),
     )
 
     assert isinstance(model, ModelReady)
     assert model.door.state == DoorState.Closed
+    assert model.door.state_start_time == happened_at
     assert any(isinstance(effect, EffectCloseDoor) for effect in effects)

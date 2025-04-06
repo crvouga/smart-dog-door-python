@@ -38,11 +38,11 @@ def test_transition_to_will_open_state_when_classifications_contain_unlock_list_
 
 
 def test_do_not_transition_to_will_open_state_if_door_is_already_open() -> None:
-    f = Fixture(door_state=DoorState.Open)
+    f = Fixture(door_state=DoorState.Opened)
     model, _ = f.transition(model=f.model, msg=MsgTick(happened_at=datetime.now()))
 
     assert isinstance(model, ModelReady)
-    assert model.door.state == DoorState.Open
+    assert model.door.state == DoorState.Opened
 
 
 def test_transition_to_open_state_if_state_is_will_close() -> None:
@@ -50,19 +50,25 @@ def test_transition_to_open_state_if_state_is_will_close() -> None:
     model, _ = f.transition(model=f.model, msg=MsgTick(happened_at=datetime.now()))
 
     assert isinstance(model, ModelReady)
-    assert model.door.state == DoorState.Open
+    assert model.door.state == DoorState.Opened
 
 
 def test_transition_to_open_state_after_minimal_duration_will_open() -> None:
     f = Fixture(door_state=DoorState.WillOpen)
+    assert isinstance(f.model, ModelReady)
+
+    happened_at = (
+        f.model.door.state_start_time
+        + f.model.config.minimal_duration_will_open
+        + timedelta(seconds=1)
+    )
 
     model, effects = f.transition(
         model=f.model,
-        msg=MsgTick(
-            happened_at=datetime.now() + f.model.config.minimal_duration_will_open
-        ),
+        msg=MsgTick(happened_at=happened_at),
     )
 
     assert isinstance(model, ModelReady)
-    assert model.door.state == DoorState.Open
+    assert model.door.state == DoorState.Opened
+    assert model.door.state_start_time == happened_at
     assert any(isinstance(effect, EffectOpenDoor) for effect in effects)
