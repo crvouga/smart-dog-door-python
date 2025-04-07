@@ -72,9 +72,6 @@ def _transition_to_will_open(
             [],
         )
 
-    if should_open and door.state == DoorState.Opened:
-        return door, []
-
     if should_open and door.state == DoorState.WillClose:
         return (
             replace(door, state=DoorState.Opened, state_start_time=msg.happened_at),
@@ -83,7 +80,11 @@ def _transition_to_will_open(
 
     if should_open and door.state == DoorState.Closed:
         return (
-            replace(door, state=DoorState.WillOpen, state_start_time=msg.happened_at),
+            replace(
+                door,
+                state=DoorState.WillOpen,
+                state_start_time=msg.happened_at,
+            ),
             [],
         )
 

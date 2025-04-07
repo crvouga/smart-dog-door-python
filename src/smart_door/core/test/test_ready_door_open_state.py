@@ -102,12 +102,9 @@ def test_bail_on_will_close_if_open_object_is_detected() -> None:
 
 def test_transition_to_open_state_after_minimal_duration_will_open() -> None:
     f = Fixture(door_state=DoorState.WillOpen)
-    assert isinstance(f.model, ModelReady)
 
     happened_at = (
-        f.model.door.state_start_time
-        + f.model.config.minimal_duration_will_open
-        + timedelta(seconds=1)
+        f.model.door.state_start_time + f.model.config.minimal_duration_will_open
     )
 
     model, effects = f.transition(

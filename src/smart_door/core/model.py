@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
-from typing import Literal, Union
+from typing import Literal, Optional, Union
 from enum import Enum, auto
-from datetime import datetime
+from datetime import datetime, timedelta
 from src.image_classifier.classification import Classification
 from src.smart_door.config import Config
 
