@@ -3,6 +3,7 @@ from typing import List, Dict, Any
 from wyze_sdk import Client  # type: ignore
 from wyze_sdk.errors import WyzeApiError  # type: ignore
 from logging import Logger
+from src.library.dict_ext import recursive_map
 from src.library.secret_string import SecretString
 
 

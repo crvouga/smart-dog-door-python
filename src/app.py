@@ -54,6 +54,8 @@ class App(LifeCycle):
         if not wyze_device:
             raise Exception("No Wyze device found")
 
+        # print(wyze_device.)
+
         self._device_camera = WyzeSdkCamera(
             wyze_client=wyze_client,
             logger=self._logger,

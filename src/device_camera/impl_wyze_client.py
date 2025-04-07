@@ -89,7 +89,7 @@ class WyzeSdkCamera(DeviceCamera):
         while self._running:
             try:
                 # Get camera snapshot
-                print("self._device_mac", self._device_mac)
+
                 response = self._wyze_client.wyze_sdk_client.cameras.turn_on(
                     device_mac=self._device_mac,
                     device_model=self._device_model,
