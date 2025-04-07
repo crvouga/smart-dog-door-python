@@ -60,7 +60,7 @@ class StateMachine(Generic[Model, Msg, Effect], LifeCycle):
         return self._msgs
 
     def _handle_output(self, model: Model, effects: List[Effect]) -> None:
-        self._models.pub(model)
+        self._models.publish(model)
         self._model = model
         for effect in effects:
             self._interpret_effect_thread(effect)
@@ -84,7 +84,7 @@ class StateMachine(Generic[Model, Msg, Effect], LifeCycle):
                 if self._model is None:
                     continue
 
-                self._msgs.pub(msg)
+                self._msgs.publish(msg)
                 model, effects = self._transition(self._model, msg)
 
                 if self._should_log:

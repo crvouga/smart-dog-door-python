@@ -8,13 +8,13 @@ U = TypeVar("U")
 
 class Pub(ABC, Generic[T]):
     @abstractmethod
-    def pub(self, value: T) -> None:
+    def publish(self, value: T) -> None:
         pass
 
 
 class Sub(ABC, Generic[T]):
     @abstractmethod
-    def sub(self, observer: Callable[[T], None]) -> Callable[[], None]:
+    def subscribe(self, observer: Callable[[T], None]) -> Callable[[], None]:
         pass
 
     @abstractmethod
@@ -33,7 +33,7 @@ class PubSub(Sub[T], Pub[T]):
         self._subs: list[Callable[[T], None]] = []
         self._pending_messages: List[T] = []
 
-    def sub(self, observer: Callable[[T], None]) -> Callable[[], None]:
+    def subscribe(self, observer: Callable[[T], None]) -> Callable[[], None]:
         if observer not in self._subs:
             self._subs.append(observer)
 
@@ -43,13 +43,13 @@ class PubSub(Sub[T], Pub[T]):
             if self._pending_messages and self._subs:
                 self._pending_messages = []
 
-        def unsub() -> None:
+        def unsubscribe() -> None:
             if observer in self._subs:
                 self._subs.remove(observer)
 
-        return unsub
+        return unsubscribe
 
-    def pub(self, value: T) -> None:
+    def publish(self, value: T) -> None:
         if not self._subs:
             self._pending_messages.append(value)
         else:
@@ -62,14 +62,14 @@ class PubSub(Sub[T], Pub[T]):
         def enqueue_message(value: T) -> None:
             q.put(value)
 
-        return self.sub(enqueue_message)
+        return self.subscribe(enqueue_message)
 
     def map(self, mapper: Callable[[T], U]) -> "PubSub[U]":
         new_pub_sub = PubSub[U]()
 
         def new_observer(value: T) -> None:
             new_value = mapper(value)
-            new_pub_sub.pub(new_value)
+            new_pub_sub.publish(new_value)
 
-        self.sub(new_observer)
+        self.subscribe(new_observer)
         return new_pub_sub

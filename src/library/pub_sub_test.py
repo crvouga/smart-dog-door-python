@@ -18,7 +18,7 @@ def test_sub_adds_observer() -> None:
     def observer(value: str) -> None:
         messages.append(value)
 
-    unsub = pub_sub.sub(observer)
+    unsub = pub_sub.subscribe(observer)
     assert observer in pub_sub._subs
     assert callable(unsub)
 
@@ -31,7 +31,7 @@ def test_unsub_removes_observer() -> None:
     def observer(value: str) -> None:
         messages.append(value)
 
-    unsub = pub_sub.sub(observer)
+    unsub = pub_sub.subscribe(observer)
     assert observer in pub_sub._subs
 
     unsub()
@@ -50,10 +50,10 @@ def test_pub_with_subscribers() -> None:
     def observer2(value: int) -> None:
         messages2.append(value)
 
-    pub_sub.sub(observer1)
-    pub_sub.sub(observer2)
+    pub_sub.subscribe(observer1)
+    pub_sub.subscribe(observer2)
 
-    pub_sub.pub(42)
+    pub_sub.publish(42)
 
     assert messages1 == [42]
     assert messages2 == [42]
@@ -64,15 +64,15 @@ def test_pub_without_subscribers() -> None:
     pub_sub = PubSub[str]()
     messages: List[str] = []
 
-    pub_sub.pub("hello")
-    pub_sub.pub("world")
+    pub_sub.publish("hello")
+    pub_sub.publish("world")
 
     assert pub_sub._pending_messages == ["hello", "world"]
 
     def observer(value: str) -> None:
         messages.append(value)
 
-    pub_sub.sub(observer)
+    pub_sub.subscribe(observer)
 
     assert messages == ["hello", "world"]
     assert pub_sub._pending_messages == []
@@ -86,10 +86,10 @@ def test_multiple_subscriptions_same_observer() -> None:
     def observer(value: int) -> None:
         messages.append(value)
 
-    pub_sub.sub(observer)
-    pub_sub.sub(observer)  # Subscribe again with the same observer
+    pub_sub.subscribe(observer)
+    pub_sub.subscribe(observer)  # Subscribe again with the same observer
 
-    pub_sub.pub(42)
+    pub_sub.publish(42)
 
     assert messages == [42]  # Message should be received only once
     assert len(pub_sub._subs) == 1
@@ -109,11 +109,11 @@ def test_pub_sub_with_different_types() -> None:
     def str_observer(value: str) -> None:
         str_messages.append(value)
 
-    pub_sub_int.sub(int_observer)
-    pub_sub_str.sub(str_observer)
+    pub_sub_int.subscribe(int_observer)
+    pub_sub_str.subscribe(str_observer)
 
-    pub_sub_int.pub(42)
-    pub_sub_str.pub("hello")
+    pub_sub_int.publish(42)
+    pub_sub_str.publish("hello")
 
     assert int_messages == [42]
     assert str_messages == ["hello"]
@@ -126,9 +126,9 @@ def test_enqueue_method() -> None:
 
     unsub = pub_sub.enqueue(q)
 
-    pub_sub.pub(1)
-    pub_sub.pub(2)
-    pub_sub.pub(3)
+    pub_sub.publish(1)
+    pub_sub.publish(2)
+    pub_sub.publish(3)
 
     assert q.get() == 1
     assert q.get() == 2
@@ -136,7 +136,7 @@ def test_enqueue_method() -> None:
 
     unsub()
 
-    pub_sub.pub(4)
+    pub_sub.publish(4)
     assert q.empty()  # No more messages should be enqueued after unsubscribing
 
 
@@ -154,15 +154,15 @@ def test_map_method() -> None:
     def str_observer(value: str) -> None:
         str_messages.append(value)
 
-    pub_sub_int.sub(int_observer)
-    pub_sub_str.sub(str_observer)
+    pub_sub_int.subscribe(int_observer)
+    pub_sub_str.subscribe(str_observer)
 
-    pub_sub_int.pub(42)
+    pub_sub_int.publish(42)
 
     assert int_messages == [42]
     assert str_messages == ["42"]
 
-    pub_sub_int.pub(100)
+    pub_sub_int.publish(100)
 
     assert int_messages == [42, 100]
     assert str_messages == ["42", "100"]

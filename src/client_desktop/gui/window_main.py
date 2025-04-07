@@ -71,12 +71,12 @@ class WindowMain(QMainWindow):
                 classifications=to_latest_classifications(model)
             )
 
-        self._smart_door.models.sub(_set_classifications)
+        self._smart_door.models.subscribe(_set_classifications)
 
         def _set_is_connected(model: Model):
             self._widget_camera_feed.set_is_connected(is_camera_connected(model))
 
-        self._smart_door.models.sub(_set_is_connected)
+        self._smart_door.models.subscribe(_set_is_connected)
 
     def _setup_widget_door_status(self) -> None:
         self._widget_door_status = WidgetDoorStatus()
@@ -85,4 +85,4 @@ class WindowMain(QMainWindow):
         def _update_door_status(model: Model):
             self._widget_door_status.update(model)
 
-        self._smart_door.models.sub(_update_door_status)
+        self._smart_door.models.subscribe(_update_door_status)

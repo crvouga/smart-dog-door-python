@@ -27,19 +27,19 @@ def interpret_effect(
     deps: Deps, model: Model, effect: Effect, msg_queue: queue.Queue[Msg]
 ) -> None:
     if isinstance(effect, EffectSubscribeCamera):
-        deps.device_camera.events().sub(
+        deps.device_camera.events().subscribe(
             lambda camera_event: msg_queue.put(
                 MsgCameraEvent(camera_event=camera_event)
             )
         )
 
     if isinstance(effect, EffectSubscribeDoor):
-        deps.device_door.events().sub(
+        deps.device_door.events().subscribe(
             lambda door_event: msg_queue.put(MsgDoorEvent(door_event=door_event))
         )
 
     if isinstance(effect, EffectSubscribeTick):
-        ticks(interval=model.config.tick_rate).sub(
+        ticks(interval=model.config.tick_rate).subscribe(
             lambda now: msg_queue.put(MsgTick(happened_at=now))
         )
 

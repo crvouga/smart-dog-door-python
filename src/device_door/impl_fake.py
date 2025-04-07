@@ -29,7 +29,7 @@ class FakeDeviceDoor(DeviceDoor):
     def events(self) -> Sub[EventDoor]:
         pub_sub = PubSub[EventDoor]()
 
-        pub_sub.pub(EventDoorConnected())
+        pub_sub.publish(EventDoorConnected())
 
         return pub_sub
 

@@ -9,7 +9,7 @@ def ticks(interval: timedelta) -> Sub[datetime]:
 
     def tick_thread():
         while True:
-            pub_sub.pub(datetime.now())
+            pub_sub.publish(datetime.now())
             time.sleep(interval.total_seconds())
 
     thread = threading.Thread(target=tick_thread, daemon=True)

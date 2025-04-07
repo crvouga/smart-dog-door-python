@@ -54,7 +54,7 @@ class FakeDeviceCamera(DeviceCamera):
     def events(self) -> Sub[EventCamera]:
         pub_sub = PubSub[EventCamera]()
 
-        pub_sub.pub(EventCameraConnected())
+        pub_sub.publish(EventCameraConnected())
 
         return pub_sub
 

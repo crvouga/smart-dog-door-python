@@ -110,7 +110,7 @@ class IndexedDeviceCamera(DeviceCamera):
 
     def _publish_event(self, event: EventCamera) -> None:
         try:
-            self._pub_sub.pub(event)
+            self._pub_sub.publish(event)
         except Exception as e:
             self._logger.error(f"Error publishing event {type(event).__name__}: {e}")
 

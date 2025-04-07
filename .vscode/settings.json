@@ -8,6 +8,7 @@
     "convnext",
     "dateutil",
     "docopt",
+    "dotenv",
     "efficientnet",
     "exceptiongroup",
     "filelock",
@@ -54,6 +55,7 @@
     "venv",
     "virtualenv",
     "watchmedo",
+    "Wyze",
     "xyxy",
     "yolov",
     "zipp"
