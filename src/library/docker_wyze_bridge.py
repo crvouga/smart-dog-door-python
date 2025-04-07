@@ -3,6 +3,8 @@ from dataclasses import dataclass
 from urllib.parse import quote
 from .host_ip import get_host_ip
 
+# Web UI: http://localhost:5000/
+
 
 @dataclass
 class WyzeBridgeUrls:
