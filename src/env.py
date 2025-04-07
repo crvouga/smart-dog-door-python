@@ -9,6 +9,8 @@ from typing import Any
 class Env:
     wyze_key_id: SecretString
     wyze_api_key: SecretString
+    wyze_email: SecretString
+    wyze_password: SecretString
 
 
 def load_env() -> Env:
@@ -22,9 +24,20 @@ def load_env() -> Env:
         name="wyze_api_key", secret=_ensure_non_empty_string(os.getenv("WYZE_API_KEY"))
     )
 
+    wyze_email = SecretString(
+        name="wyze_email", secret=_ensure_non_empty_string(os.getenv("WYZE_EMAIL"))
+    )
+
+    wyze_password = SecretString(
+        name="wyze_password",
+        secret=_ensure_non_empty_string(os.getenv("WYZE_PASSWORD")),
+    )
+
     env = Env(
         wyze_key_id=wyze_key_id,
         wyze_api_key=wyze_api_key,
+        wyze_email=wyze_email,
+        wyze_password=wyze_password,
     )
 
     return env

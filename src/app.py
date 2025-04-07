@@ -41,6 +41,8 @@ class App(LifeCycle):
         self._device_camera = WyzeSdkCamera(
             api_key=env.wyze_api_key,
             key_id=env.wyze_key_id,
+            email=env.wyze_email,
+            password=env.wyze_password,
             logger=self._logger,
             device_mac="00:00:00:00:00:00",
         )

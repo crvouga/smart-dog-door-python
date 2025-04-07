@@ -28,14 +28,12 @@ class WyzeSdkCamera(DeviceCamera):
         self,
         logger: Logger,
         device_mac: str,
+        email: SecretString,
+        password: SecretString,
         key_id: SecretString,
         api_key: SecretString,
     ):
         self._logger = logger.getChild("wyze_device_camera")
-        self._client = Client(
-            key_id=key_id.dangerously_read_secret(),
-            api_key=api_key.dangerously_read_secret(),
-        )
         self._device_mac = device_mac
         self._pub_sub = PubSub[Union[EventCameraConnected, EventCameraDisconnected]]()
         self._capture_thread = None
@@ -44,7 +42,63 @@ class WyzeSdkCamera(DeviceCamera):
         self._latest_frame = None
         self._connected = False
         self._error_count = 0
-        self._logger.info(f"Initialized for device MAC: {device_mac}")
+
+        self._init_client(
+            email=email,
+            password=password,
+            key_id=key_id,
+            api_key=api_key,
+            device_mac=device_mac,
+        )
+        self._log_list_devices()
+        self._log_list_cameras()
+        self._log_details()
+
+    def _init_client(
+        self,
+        email: SecretString,
+        password: SecretString,
+        key_id: SecretString,
+        api_key: SecretString,
+        device_mac: str,
+    ) -> None:
+        self._client = Client()
+        try:
+            self._client.login(
+                email=email.dangerously_read_secret(),
+                password=password.dangerously_read_secret(),
+                key_id=key_id.dangerously_read_secret(),
+                api_key=api_key.dangerously_read_secret(),
+            )
+            self._logger.info(f"Successfully logged in for device MAC: {device_mac}")
+        except Exception as e:
+            self._logger.error(f"Failed to login to Wyze API: {e}")
+            raise
+
+    def _log_details(self) -> None:
+        self._logger.info("Details for camera...")
+        response = self._client.cameras.info(device_mac=self._device_mac)
+        self._logger.info(f"Response: {response}")
+
+    def _log_list_cameras(self) -> None:
+        self._logger.info("Listing cameras...")
+        camera_list = self._client.cameras.list()
+        self._logger.info(f"Found {len(camera_list)} cameras")
+        for camera in camera_list:
+            self._logger.info(f"Camera: {camera}")
+
+        self._logger.info("Listing cameras... done")
+
+    def _log_list_devices(self) -> None:
+        try:
+            response = self._client.devices_list()
+            for device in response:
+                self._logger.info(f"mac: {device.mac}")
+                self._logger.info(f"nickname: {device.nickname}")
+                self._logger.info(f"is_online: {device.is_online}")
+                self._logger.info(f"product model: {device.product.model}")
+        except WyzeApiError as e:
+            self._logger.error(f"Got an error: {e}")
 
     def start(self) -> None:
         self._logger.info("Starting WyzeSdkCamera...")
@@ -74,10 +128,9 @@ class WyzeSdkCamera(DeviceCamera):
     def _capture_loop(self) -> None:
         while self._running:
             try:
+
                 # Get camera snapshot
-                response = self._client.cameras.get_thumbnail(
-                    device_mac=self._device_mac
-                )
+                response = self._client.cameras.turn_on()
                 if response and response.data:
                     frame = Image.from_np_array(response.data)
                     with self._lock:
