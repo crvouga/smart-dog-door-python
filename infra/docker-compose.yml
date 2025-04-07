@@ -1,3 +1,4 @@
+name: smart-dog-door
 
 services:
   wyze-bridge:
@@ -8,11 +9,13 @@ services:
       - "1935:1935"     # RTMP
       - "8554:8554"     # RTSP
       - "8888:8888"     # HLS
+      - "5001:5000"     # Web UI (mapped to 5001 on host)
     environment:
       - WYZE_EMAIL=${WYZE_EMAIL}
       - WYZE_PASSWORD=${WYZE_PASSWORD}
-    devices:
-      - /dev/video0:/dev/video0 # optional, only if needed
+      - WB_USERNAME=username        # WebUI username
+      - WB_PASSWORD=password # WebUI password
+      - WB_AUTH=true            # Enable WebUI authentication
     volumes:
       - wyze-config:/config
     logging:

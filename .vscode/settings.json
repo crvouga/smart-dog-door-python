@@ -7,6 +7,7 @@
     "contourpy",
     "convnext",
     "dateutil",
+    "DGRAM",
     "docopt",
     "dotenv",
     "efficientnet",

@@ -7,7 +7,6 @@ import threading
 import time
 from logging import Logger
 from typing import Optional, Union
-from src.library.secret_string import SecretString
 
 
 class WyzeSdkCamera(DeviceCamera):

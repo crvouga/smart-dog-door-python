@@ -2,6 +2,7 @@
 from dataclasses import dataclass
 from urllib.parse import quote
 from .host_ip import get_host_ip
+from typing import Optional
 
 # Web UI: http://localhost:5000/
 
@@ -15,9 +16,8 @@ class WyzeBridgeUrls:
 
 
 class DockerWyzeBridge:
-    def __init__(self, camera_name: str, host_ip: str = ...):
-        host_ip = get_host_ip() if host_ip is ... else host_ip
-        self.host_ip = host_ip.strip()
+    def __init__(self, camera_name: str, host_ip: Optional[str] = None):
+        self.host_ip = (host_ip or get_host_ip()).strip()
         self.camera_name = self._normalize_camera_name(camera_name)
 
     def _normalize_camera_name(self, name: str) -> str:
