@@ -2,6 +2,7 @@ import os
 from dotenv import load_dotenv
 from dataclasses import dataclass
 from src.library.secret_string import SecretString
+from typing import Any
 
 
 @dataclass
@@ -13,19 +14,13 @@ class Env:
 def load_env() -> Env:
     load_dotenv()
 
-    wyze_key_id_env_var = os.getenv("WYZE_KEY_ID")
+    wyze_key_id = SecretString(
+        name="wyze_key_id", secret=_ensure_non_empty_string(os.getenv("WYZE_KEY_ID"))
+    )
 
-    if wyze_key_id_env_var is None:
-        raise ValueError("WYZE_KEY_ID is not set")
-
-    wyze_key_id = SecretString(name="wyze_key_id", secret=wyze_key_id_env_var)
-
-    wyze_api_key_env_var = os.getenv("WYZE_API_KEY")
-
-    if wyze_api_key_env_var is None:
-        raise ValueError("WYZE_API_KEY is not set")
-
-    wyze_api_key = SecretString(name="wyze_api_key", secret=wyze_api_key_env_var)
+    wyze_api_key = SecretString(
+        name="wyze_api_key", secret=_ensure_non_empty_string(os.getenv("WYZE_API_KEY"))
+    )
 
     env = Env(
         wyze_key_id=wyze_key_id,
@@ -33,3 +28,10 @@ def load_env() -> Env:
     )
 
     return env
+
+
+def _ensure_non_empty_string(name: Any) -> str:
+    if isinstance(name, str) and name:
+        return name
+    else:
+        raise ValueError(f"{name} is not a non-empty string")

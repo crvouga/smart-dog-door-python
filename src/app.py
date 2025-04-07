@@ -2,6 +2,7 @@ from src.client_console.client_console import ConsoleClient
 from src.client_desktop.client_desktop import DesktopClient
 import logging
 from src.device_camera.impl_indexed import IndexedDeviceCamera
+from src.device_camera.impl_wyze_sdk import WyzeSdkCamera
 from src.device_camera.interface import DeviceCamera
 from src.device_door.impl_fake import FakeDeviceDoor
 from src.device_door.interface import DeviceDoor
@@ -36,6 +37,13 @@ class App(LifeCycle):
         self._device_door = FakeDeviceDoor(logger=self._logger)
 
         self._device_camera = IndexedDeviceCamera(logger=self._logger, device_ids=[0])
+
+        self._device_camera = WyzeSdkCamera(
+            api_key=env.wyze_api_key,
+            key_id=env.wyze_key_id,
+            logger=self._logger,
+            device_mac="00:00:00:00:00:00",
+        )
 
         self._smart_door = SmartDoor(
             image_classifier=self._image_classifier,
