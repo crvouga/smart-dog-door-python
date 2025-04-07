@@ -11,8 +11,6 @@ services:
       - "8888:8888"     # HLS
       - "5001:5000"     # Web UI (mapped to 5001 on host)
     environment:
-      - WYZE_EMAIL=${WYZE_EMAIL}
-      - WYZE_PASSWORD=${WYZE_PASSWORD}
       - WB_USERNAME=username        # WebUI username
       - WB_PASSWORD=password # WebUI password
       - WB_AUTH=true            # Enable WebUI authentication
