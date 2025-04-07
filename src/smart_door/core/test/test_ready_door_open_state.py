@@ -3,7 +3,7 @@ from dataclasses import replace
 from src.image_classifier.classification import Classification
 from src.smart_door.core.effect import EffectOpenDoor
 from src.smart_door.core.model import DoorState, Model, ModelReady
-from src.smart_door.core.msg import MsgTick
+from src.smart_door.core.msg import MsgImageClassifyDone, MsgTick, MsgImageCaptureDone
 from src.smart_door.core.test.fixture import BaseFixture
 
 
@@ -48,6 +48,53 @@ def test_do_not_transition_to_will_open_state_if_door_is_already_open() -> None:
 def test_transition_to_open_state_if_state_is_will_close() -> None:
     f = Fixture(door_state=DoorState.WillClose)
     model, _ = f.transition(model=f.model, msg=MsgTick(happened_at=datetime.now()))
+
+    assert isinstance(model, ModelReady)
+    assert model.door.state == DoorState.Opened
+
+
+def test_bail_on_will_open_if_no_object_is_detected() -> None:
+    f = Fixture(door_state=DoorState.WillOpen)
+    model, _ = f.transition(
+        model=f.model,
+        msg=MsgTick(happened_at=datetime.now()),
+    )
+    assert isinstance(model, ModelReady)
+    assert model.door.state == DoorState.WillOpen
+
+    model, _ = f.transition(
+        model=replace(model, camera=replace(model.camera, latest_classification=[])),
+        msg=MsgTick(happened_at=datetime.now()),
+    )
+
+    assert isinstance(model, ModelReady)
+    assert model.door.state == DoorState.Closed
+
+
+def test_bail_on_will_close_if_open_object_is_detected() -> None:
+    f = Fixture(door_state=DoorState.WillClose)
+    model: Model = replace(
+        f.model, camera=replace(f.model.camera, latest_classification=[])
+    )
+    model, _ = f.transition(
+        model=model,
+        msg=MsgTick(happened_at=datetime.now()),
+    )
+    assert isinstance(model, ModelReady)
+    assert model.door.state == DoorState.WillClose
+
+    model, _ = f.transition(
+        model=replace(
+            model,
+            camera=replace(
+                model.camera,
+                latest_classification=[
+                    Classification(label="dog", weight=0.5),
+                ],
+            ),
+        ),
+        msg=MsgTick(happened_at=datetime.now()),
+    )
 
     assert isinstance(model, ModelReady)
     assert model.door.state == DoorState.Opened

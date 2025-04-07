@@ -62,19 +62,19 @@ def _transition_to_will_open(
         open_list=model.config.classification_open_list,
     )
 
-    if not should_open:
+    if not should_open and door.state == DoorState.WillOpen:
+        return replace(door, state=DoorState.Closed), []
+
+    if should_open and door.state == DoorState.Opened:
         return door, []
 
-    if door.state == DoorState.Opened:
-        return door, []
-
-    if door.state == DoorState.WillClose:
+    if should_open and door.state == DoorState.WillClose:
         return (
             replace(door, state=DoorState.Opened, state_start_time=msg.happened_at),
             [],
         )
 
-    if door.state == DoorState.Closed:
+    if should_open and door.state == DoorState.Closed:
         return (
             replace(door, state=DoorState.WillOpen, state_start_time=msg.happened_at),
             [],
