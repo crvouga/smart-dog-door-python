@@ -40,9 +40,11 @@ class SmartDoor(LifeCycle):
             logger=self._deps.logger,
         )
 
+    @property
     def models(self) -> Sub[Model]:
         return self._state_machine.models()
 
+    @property
     def msgs(self) -> Sub[Msg]:
         return self._state_machine.msgs()
 

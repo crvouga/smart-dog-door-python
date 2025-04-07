@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
-from typing import Literal, Optional, Union
+from typing import Literal, Union
 from enum import Enum, auto
-from datetime import datetime, timedelta
+from datetime import datetime
 from src.image_classifier.classification import Classification
 from src.smart_door.config import Config
 
@@ -73,3 +73,9 @@ def is_camera_connected(model: Model) -> bool:
     if isinstance(model, ModelConnecting):
         return model.camera == ConnectionState.Connected
     return True
+
+
+def to_latest_classifications(model: Model) -> list[Classification]:
+    if isinstance(model, ModelReady):
+        return model.camera.latest_classification
+    return []

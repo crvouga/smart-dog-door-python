@@ -63,7 +63,7 @@ class WindowDebug(QMainWindow):
         def _set_model_label(model: Model):
             self._model_label.setText(format_obj(model))
 
-        self._smart_door.models().sub(_set_model_label)
+        self._smart_door.models.sub(_set_model_label)
 
     def _setup_msgs_label(self):
         self._msgs_label = QLabel("Msg")
@@ -76,7 +76,7 @@ class WindowDebug(QMainWindow):
         def _set_msgs_label(msg: Msg):
             self._msgs_label.setText(format_obj(msg))
 
-        self._smart_door.msgs().sub(_set_msgs_label)
+        self._smart_door.msgs.sub(_set_msgs_label)
 
 
 def format_obj(obj: Any) -> str:
