@@ -5,8 +5,15 @@ from src.smart_door.core.msg import MsgCameraEvent, MsgDoorEvent
 from src.smart_door.core.test.fixture import BaseFixture
 
 
+class Fixture(BaseFixture):
+    def __init__(self) -> None:
+        super().__init__()
+        self.model, _ = self.init()
+        self.model, _ = self.transition_to_ready_state(model=self.model)
+
+
 def test_transition_to_ready_state() -> None:
-    f = BaseFixture()
+    f = Fixture()
 
     model, _ = f.init()
 
@@ -24,14 +31,10 @@ def test_transition_to_ready_state() -> None:
 
 
 def test_transition_to_connecting_state_when_camera_disconnected() -> None:
-    f = BaseFixture()
-
-    model, _ = f.init()
-
-    model, _ = f.transition_to_ready_state(model=model)
+    f = Fixture()
 
     model, _ = f.transition(
-        model=model,
+        model=f.model,
         msg=MsgCameraEvent(camera_event=EventCameraDisconnected()),
     )
 
@@ -41,14 +44,10 @@ def test_transition_to_connecting_state_when_camera_disconnected() -> None:
 
 
 def test_transition_to_connecting_state_when_door_disconnected() -> None:
-    f = BaseFixture()
-
-    model, _ = f.init()
-
-    model, _ = f.transition_to_ready_state(model=model)
+    f = Fixture()
 
     model, _ = f.transition(
-        model=model,
+        model=f.model,
         msg=MsgDoorEvent(door_event=EventDoorDisconnected()),
     )
 
