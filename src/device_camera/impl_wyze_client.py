@@ -14,6 +14,7 @@ class WyzeSdkCamera(DeviceCamera):
     _logger: Logger
     _wyze_client: WyzeClient
     _device_mac: str
+    _device_model: str
     _pub_sub: PubSub[Union[EventCameraConnected, EventCameraDisconnected]]
     _capture_thread: Optional[threading.Thread]
     _running: bool
@@ -27,10 +28,12 @@ class WyzeSdkCamera(DeviceCamera):
         self,
         logger: Logger,
         device_mac: str,
+        device_model: str,
         wyze_client: WyzeClient,
     ):
         self._logger = logger.getChild("wyze_device_camera")
         self._device_mac = device_mac
+        self._device_model = device_model
         self._wyze_client = wyze_client
         self._pub_sub = PubSub[Union[EventCameraConnected, EventCameraDisconnected]]()
         self._capture_thread = None
@@ -40,7 +43,6 @@ class WyzeSdkCamera(DeviceCamera):
         self._connected = False
         self._error_count = 0
 
-        self._log_list_devices()
         self._log_list_cameras()
         self._log_details()
 
@@ -88,7 +90,14 @@ class WyzeSdkCamera(DeviceCamera):
         while self._running:
             try:
                 # Get camera snapshot
-                response = self._wyze_client.execute_command("cameras.turn_on")
+                print("self._device_mac", self._device_mac)
+                response = self._wyze_client.wyze_sdk_client.cameras.turn_on(
+                    device_mac=self._device_mac,
+                    device_model=self._device_model,
+                )
+
+                print("response", response)
+                return
                 if response and response.data:
                     frame = Image.from_np_array(response.data)
                     with self._lock:

@@ -40,6 +40,16 @@ lint:
 	flake8 .
 	black .
 
+
+
+# Start Docker Compose services
+infra-up:
+	docker-compose -f infra/docker-compose.yml up -d
+
+# Stop Docker Compose services
+infra-down:
+	docker-compose -f infra/docker-compose.yml down
+
 # Clean up temporary files
 clean:
 	rm -rf __pycache__
