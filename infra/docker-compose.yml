@@ -1,0 +1,26 @@
+name: smart-dog-door
+
+services:
+  wyze-bridge:
+    image: mrlt8/wyze-bridge:latest
+    container_name: wyze-bridge
+    restart: unless-stopped
+    ports:
+      - "1935:1935"     # RTMP
+      - "8554:8554"     # RTSP
+      - "8888:8888"     # HLS
+      - "5001:5000"     # Web UI (mapped to 5001 on host)
+    environment:
+      - WB_USERNAME=username        # WebUI username
+      - WB_PASSWORD=password # WebUI password
+      - WB_AUTH=true            # Enable WebUI authentication
+    volumes:
+      - wyze-config:/config
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  wyze-config:

@@ -40,3 +40,7 @@ htmlcov/
 # Misc
 .DS_Store
 *.log
+
+# Model files
+assets/models/*
+!assets/models/.gitkeep

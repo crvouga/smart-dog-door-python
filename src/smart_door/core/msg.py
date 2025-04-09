@@ -1,53 +1,54 @@
-from dataclasses import dataclass
-from typing import Literal, Union
+from dataclasses import dataclass, field
+from typing import Literal, Optional, Union
 from datetime import datetime
 from src.image_classifier.classification import Classification
 from src.image.image import Image
 from src.device_camera.event import EventCamera
 from src.device_door.event import EventDoor
-from src.library.result import Result
 
 
 @dataclass
-class MsgTick:
-    time: datetime
+class _MsgBase:
+    happened_at: datetime = field(default_factory=datetime.now)
+
+
+@dataclass
+class MsgTick(_MsgBase):
     type: Literal["tick"] = "tick"
 
 
 @dataclass
-class MsgCameraEvent:
-    event: EventCamera
+class MsgCameraEvent(_MsgBase):
+    camera_event: Optional[EventCamera] = None
     type: Literal["camera_event"] = "camera_event"
 
 
 @dataclass
-class MsgDoorEvent:
-    event: EventDoor
+class MsgDoorEvent(_MsgBase):
+    door_event: Optional[EventDoor] = None
     type: Literal["door_event"] = "door_event"
 
 
 @dataclass
-class MsgDoorCloseDone:
-    result: Result[None, Exception]
+class MsgDoorCloseDone(_MsgBase):
     type: Literal["door_close_done"] = "door_close_done"
 
 
 @dataclass
-class MsgDoorOpenDone:
-    result: Result[None, Exception]
+class MsgDoorOpenDone(_MsgBase):
     type: Literal["door_open_done"] = "door_open_done"
 
 
 @dataclass
-class MsgFramesCaptureDone:
-    result: Result[list[Image], Exception]
-    type: Literal["frames_capture_done"] = "frames_capture_done"
+class MsgImageCaptureDone(_MsgBase):
+    images: list[Image] = field(default_factory=list)
+    type: Literal["image_capture_done"] = "image_capture_done"
 
 
 @dataclass
-class MsgFramesClassifyDone:
-    result: Result[list[Classification], Exception]
-    type: Literal["frames_classify_done"] = "frames_classify_done"
+class MsgImageClassifyDone(_MsgBase):
+    classifications: list[Classification] = field(default_factory=list)
+    type: Literal["image_classify_done"] = "image_classify_done"
 
 
 Msg = Union[
@@ -56,6 +57,6 @@ Msg = Union[
     MsgDoorEvent,
     MsgDoorCloseDone,
     MsgDoorOpenDone,
-    MsgFramesCaptureDone,
-    MsgFramesClassifyDone,
+    MsgImageCaptureDone,
+    MsgImageClassifyDone,
 ]

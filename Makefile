@@ -1,19 +1,16 @@
 # Python project Makefile
-.PHONY: run test install lint clean develop version-check
+.PHONY: run test install lint clean develop
 
 PYTHON_MIN_VERSION = 3.10
 PYTHON_VERSION := $(shell python -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
 
-# Version check target
-version-check:
-	@echo "Checking Python version..."
-	@python -c "import sys; min_ver='$(PYTHON_MIN_VERSION)'; cur_ver=f'{sys.version_info.major}.{sys.version_info.minor}'; exit(0 if float(cur_ver) >= float(min_ver) else print(f'Error: Python {min_ver}+ required, but {cur_ver} found') or 1)"
 
 # Default target executed when no arguments are given to make
 default: start
 
 # Run the application
 start:
+	clear
 	python main.py
 
 dev:
@@ -21,16 +18,18 @@ dev:
 
 # Run tests
 test:
+	clear
 	pytest
 
 # Run type checking
 tc:
+	clear
 	mypy .
 
 check:
 	clear
-	make tc
-	make test
+	mypy .
+	pytest
 
 # Install dependencies
 install:
@@ -40,6 +39,16 @@ install:
 lint:
 	flake8 .
 	black .
+
+
+
+# Start Docker Compose services
+infra-up:
+	docker-compose -f infra/docker-compose.yml up -d
+
+# Stop Docker Compose services
+infra-down:
+	docker-compose -f infra/docker-compose.yml down
 
 # Clean up temporary files
 clean:
