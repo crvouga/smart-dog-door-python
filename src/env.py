@@ -12,35 +12,37 @@ class Env:
     wyze_email: SecretString
     wyze_password: SecretString
 
+    @classmethod
+    def load(cls) -> "Env":
+        load_dotenv()
 
-def load_env() -> Env:
-    load_dotenv()
+        wyze_key_id = SecretString(
+            name="wyze_key_id",
+            secret=_ensure_non_empty_string(os.getenv("WYZE_KEY_ID")),
+        )
 
-    wyze_key_id = SecretString(
-        name="wyze_key_id", secret=_ensure_non_empty_string(os.getenv("WYZE_KEY_ID"))
-    )
+        wyze_api_key = SecretString(
+            name="wyze_api_key",
+            secret=_ensure_non_empty_string(os.getenv("WYZE_API_KEY")),
+        )
 
-    wyze_api_key = SecretString(
-        name="wyze_api_key", secret=_ensure_non_empty_string(os.getenv("WYZE_API_KEY"))
-    )
+        wyze_email = SecretString(
+            name="wyze_email", secret=_ensure_non_empty_string(os.getenv("WYZE_EMAIL"))
+        )
 
-    wyze_email = SecretString(
-        name="wyze_email", secret=_ensure_non_empty_string(os.getenv("WYZE_EMAIL"))
-    )
+        wyze_password = SecretString(
+            name="wyze_password",
+            secret=_ensure_non_empty_string(os.getenv("WYZE_PASSWORD")),
+        )
 
-    wyze_password = SecretString(
-        name="wyze_password",
-        secret=_ensure_non_empty_string(os.getenv("WYZE_PASSWORD")),
-    )
+        env = cls(
+            wyze_key_id=wyze_key_id,
+            wyze_api_key=wyze_api_key,
+            wyze_email=wyze_email,
+            wyze_password=wyze_password,
+        )
 
-    env = Env(
-        wyze_key_id=wyze_key_id,
-        wyze_api_key=wyze_api_key,
-        wyze_email=wyze_email,
-        wyze_password=wyze_password,
-    )
-
-    return env
+        return env
 
 
 def _ensure_non_empty_string(name: Any) -> str:
