@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 from src.client_desktop.gui.gui import Gui
 from src.library.life_cycle import LifeCycle
 from src.smart_door.smart_door import SmartDoor
@@ -30,7 +31,7 @@ class DesktopClient(LifeCycle):
 
         self._device_door = FakeDeviceDoor(logger=self._logger)
 
-        self._device_camera = self._initialize_camera(env)
+        self._device_camera = self._init_device_camera(env)
 
         self._smart_door = SmartDoor(
             image_classifier=self._image_classifier,
@@ -45,31 +46,50 @@ class DesktopClient(LifeCycle):
             device_camera=self._device_camera,
         )
 
-    def _initialize_camera(self, env: Env) -> DeviceCamera:
+    def _init_device_camera(self, env: Env) -> DeviceCamera:
+        indexed_device_camera = IndexedDeviceCamera(logger=self._logger, device_ids=[0])
+
         try:
-            wyze_client = WyzeClient(
-                logger=self._logger,
-                email=env.wyze_email,
-                password=env.wyze_password,
-                key_id=env.wyze_key_id,
-                api_key=env.wyze_api_key,
-            )
+            wyze_client = self._init_wyze_client(env=env)
 
-            wyze_devices = wyze_client.list_devices()
+            wyze_device_camera = self._init_wyze_device_camera(wyze_client=wyze_client)
 
-            if wyze_devices:
-                wyze_device = wyze_devices[0]
-                return WyzeSdkCamera(
-                    wyze_client=wyze_client,
-                    logger=self._logger,
-                    device_mac=wyze_device.mac,
-                    device_model=wyze_device.model,
-                )
+            if not wyze_device_camera:
+                return indexed_device_camera
 
-            return IndexedDeviceCamera(logger=self._logger, device_ids=[0])
+            return wyze_device_camera
         except Exception as e:
             self._logger.warning(f"Failed to initialize Wyze camera: {e}")
-            return IndexedDeviceCamera(logger=self._logger, device_ids=[0])
+            return indexed_device_camera
+
+    def _init_wyze_device_camera(
+        self, wyze_client: WyzeClient
+    ) -> Optional[WyzeSdkCamera]:
+        wyze_devices = wyze_client.list_devices()
+
+        if not wyze_devices:
+            self._logger.warning("No Wyze devices found")
+            return None
+
+        wyze_device = wyze_devices[0]
+
+        wyze_device_camera = WyzeSdkCamera(
+            wyze_client=wyze_client,
+            logger=self._logger,
+            device_mac=wyze_device.mac,
+            device_model=wyze_device.model,
+        )
+        return wyze_device_camera
+
+    def _init_wyze_client(self, env: Env) -> WyzeClient:
+        wyze_client = WyzeClient(
+            logger=self._logger,
+            email=env.wyze_email,
+            password=env.wyze_password,
+            key_id=env.wyze_key_id,
+            api_key=env.wyze_api_key,
+        )
+        return wyze_client
 
     def start(self) -> None:
         self._logger.info("Starting")
