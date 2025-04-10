@@ -18,11 +18,7 @@ class WyzeBridgeUrls:
 class DockerWyzeBridge:
     def __init__(self, camera_name: str, host_ip: Optional[str] = None):
         self.host_ip = (host_ip or get_host_ip()).strip()
-        self.camera_name = self._normalize_camera_name(camera_name)
-
-    def _normalize_camera_name(self, name: str) -> str:
-        """Normalize camera name to match wyze-bridge format."""
-        return quote(name.strip().lower().replace(" ", "-"))
+        self.camera_name = camera_name
 
     @property
     def rtsp_url(self) -> str:
