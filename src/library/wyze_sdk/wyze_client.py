@@ -3,8 +3,8 @@ from typing import List, Dict, Any
 from wyze_sdk import Client  # type: ignore
 from wyze_sdk.errors import WyzeApiError  # type: ignore
 from logging import Logger
-from src.library.dict_ext import recursive_map
 from src.library.secret_string import SecretString
+from urllib.parse import quote
 
 
 @dataclass
@@ -13,6 +13,13 @@ class WyzeDevice:
     nickname: str
     is_online: bool
     model: str
+    name: str
+
+    @property
+    def name(self) -> str:
+        """Normalize camera name to match wyze-bridge format."""
+
+        return quote(self.nickname.strip().lower().replace(" ", "-"))
 
 
 class WyzeClient:
