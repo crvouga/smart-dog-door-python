@@ -9,7 +9,7 @@ from src.device_door.interface import DeviceDoor
 from src.image_classifier.impl_yolo import YoloImageClassifier, YoloModelSize
 from src.image_classifier.interface import ImageClassifier
 from src.env import Env
-from src.device_camera.factory import create_camera
+from src.device_camera.factory import DeviceCameraFactory
 
 
 class DesktopClient(LifeCycle):
@@ -29,7 +29,14 @@ class DesktopClient(LifeCycle):
 
         self._device_door = FakeDeviceDoor(logger=self._logger)
 
-        self._device_camera = create_camera(env=env, logger=self._logger)
+        device_camera_factory = DeviceCameraFactory(logger=self._logger)
+
+        device_camera = device_camera_factory.create_from_env(env=env)
+
+        if not device_camera:
+            raise ValueError("No device camera found")
+
+        self._device_camera = device_camera
 
         self._smart_door = SmartDoor(
             image_classifier=self._image_classifier,

@@ -7,28 +7,23 @@ from typing import Any
 
 @dataclass
 class Env:
-    wyze_key_id: SecretString
+    wyze_key_id: str
     wyze_api_key: SecretString
-    wyze_email: SecretString
+    wyze_email: str
     wyze_password: SecretString
 
     @classmethod
     def load(cls) -> "Env":
         load_dotenv()
 
-        wyze_key_id = SecretString(
-            name="wyze_key_id",
-            secret=_ensure_non_empty_string(os.getenv("WYZE_KEY_ID")),
-        )
+        wyze_key_id = _ensure_non_empty_string(os.getenv("WYZE_KEY_ID"))
 
         wyze_api_key = SecretString(
             name="wyze_api_key",
             secret=_ensure_non_empty_string(os.getenv("WYZE_API_KEY")),
         )
 
-        wyze_email = SecretString(
-            name="wyze_email", secret=_ensure_non_empty_string(os.getenv("WYZE_EMAIL"))
-        )
+        wyze_email = _ensure_non_empty_string(os.getenv("WYZE_EMAIL"))
 
         wyze_password = SecretString(
             name="wyze_password",

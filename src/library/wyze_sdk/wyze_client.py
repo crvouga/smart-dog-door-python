@@ -13,7 +13,6 @@ class WyzeDevice:
     nickname: str
     is_online: bool
     model: str
-    name: str
 
     @property
     def name(self) -> str:
@@ -29,9 +28,9 @@ class WyzeClient:
     def __init__(
         self,
         logger: Logger,
-        email: SecretString,
+        email: str,
         password: SecretString,
-        key_id: SecretString,
+        key_id: str,
         api_key: SecretString,
     ):
         self._logger = logger.getChild("wyze_client")
@@ -41,17 +40,17 @@ class WyzeClient:
 
     def _init_client(
         self,
-        email: SecretString,
+        email: str,
         password: SecretString,
-        key_id: SecretString,
+        key_id: str,
         api_key: SecretString,
     ) -> None:
         self._client = Client()
         try:
             self._client.login(
-                email=email.dangerously_read_secret(),
+                email=email,
                 password=password.dangerously_read_secret(),
-                key_id=key_id.dangerously_read_secret(),
+                key_id=key_id,
                 api_key=api_key.dangerously_read_secret(),
             )
             self._logger.info("Successfully logged in to Wyze API")

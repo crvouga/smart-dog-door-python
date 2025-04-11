@@ -13,36 +13,42 @@ class DeviceCameraFactory:
     def __init__(self, logger: logging.Logger) -> None:
         self._logger = logger.getChild("device_camera_factory")
 
-    def create_camera(self, env: Env) -> Optional[DeviceCamera]:
+    def create_from_env(self, env: Env) -> Optional[DeviceCamera]:
         """Factory method to create the appropriate camera based on environment configuration."""
-        wyze_rstp_device_camera = self._create_wyze_rstp_camera(env=env)
+        wyze_rstp_device_camera = self._create_wyze_rstp(env=env)
 
-        if True:  # TODO: Add proper condition based on env configuration
+        if wyze_rstp_device_camera:
+            self._logger.info("Using Wyze RSTP device camera")
             return wyze_rstp_device_camera
 
-        wyze_device_camera = self._create_wyze_sdk_camera(env=env)
+        wyze_device_camera = self._create_wyze_sdk(env=env)
 
-        if not wyze_device_camera:
-            return self._create_indexed_camera()
+        if wyze_device_camera:
+            self._logger.info("Using Wyze SDK device camera")
+            return wyze_device_camera
 
-        return wyze_device_camera
+        self._logger.info("Using Wyze SDK device camera")
+        return None
 
-    def _create_indexed_camera(self) -> IndexedDeviceCamera:
+    def _create_indexed(self) -> IndexedDeviceCamera:
         """Create a camera using device index (e.g., webcam)."""
         return IndexedDeviceCamera(logger=self._logger, device_ids=[0])
 
-    def _create_wyze_rstp_camera(self, env: Env) -> Optional[DeviceCamera]:
+    def _create_wyze_rstp(self, env: Env) -> Optional[DeviceCamera]:
         """Create a Wyze camera using RTSP protocol."""
         self._logger.info("Initializing Wyze RSTP device camera")
         wyze_client = self._init_wyze_client(env=env)
         wyze_device = self._get_wyze_device(wyze_client=wyze_client)
+        if not wyze_device:
+            return None
+
         wyze_bridge = DockerWyzeBridge(camera_name=wyze_device.name)
         wyze_device_camera = RstpDeviceCamera(
-            logger=self._logger, rtsp_url=wyze_bridge.rstp_url
+            logger=self._logger, rtsp_url=wyze_bridge.rtsp_url
         )
         return wyze_device_camera
 
-    def _create_wyze_sdk_camera(self, env: Env) -> Optional[WyzeSdkCamera]:
+    def _create_wyze_sdk(self, env: Env) -> Optional[WyzeSdkCamera]:
         """Create a Wyze camera using the official SDK."""
         wyze_client = self._init_wyze_client(env=env)
         wyze_device = self._get_wyze_device(wyze_client=wyze_client)
