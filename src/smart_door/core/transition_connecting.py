@@ -25,7 +25,6 @@ def transition_connecting(
     model: ModelConnecting, msg: Msg
 ) -> tuple[Model, list[Effect]]:
     model_new = ModelConnecting(
-        type="connecting",
         camera=_transition_connecting_camera(model.camera, msg),
         door=_transition_connecting_door(model.door, msg),
     )
@@ -40,7 +39,6 @@ def transition_connecting(
 
     return (
         ModelReady(
-            type="ready",
             camera=ModelCamera(
                 state=CameraState.Idle,
                 state_start_time=datetime.now(),

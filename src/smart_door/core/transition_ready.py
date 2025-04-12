@@ -26,7 +26,6 @@ def transition_ready(model: ModelReady, msg: Msg) -> tuple[Model, list[Effect]]:
     ):
         return (
             ModelConnecting(
-                type="connecting",
                 camera=ConnectionState.Connecting,
                 door=ConnectionState.Connected,
             ),
@@ -38,7 +37,6 @@ def transition_ready(model: ModelReady, msg: Msg) -> tuple[Model, list[Effect]]:
     ):
         return (
             ModelConnecting(
-                type="connecting",
                 camera=ConnectionState.Connected,
                 door=ConnectionState.Connecting,
             ),

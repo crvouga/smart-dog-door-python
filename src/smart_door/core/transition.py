@@ -20,14 +20,13 @@ from .effect import (
 def init() -> tuple[Model, list[Effect]]:
     return (
         ModelConnecting(
-            type="connecting",
             camera=ConnectionState.Connecting,
             door=ConnectionState.Connecting,
         ),
         [
-            EffectSubscribeCamera(type="subscribe_camera"),
-            EffectSubscribeDoor(type="subscribe_door"),
-            EffectSubscribeTick(type="subscribe_tick"),
+            EffectSubscribeCamera(),
+            EffectSubscribeDoor(),
+            EffectSubscribeTick(),
         ],
     )
 

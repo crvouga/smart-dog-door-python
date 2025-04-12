@@ -15,12 +15,14 @@ class DeviceCameraFactory:
 
     def create_from_env(self, env: Env) -> Optional[DeviceCamera]:
         """Factory method to create the appropriate camera based on environment configuration."""
-        return self._create_indexed()
+
         wyze_rstp_device_camera = self._create_wyze_rstp(env=env)
 
         if wyze_rstp_device_camera:
             self._logger.info("Using Wyze RSTP device camera")
             return wyze_rstp_device_camera
+
+        self._logger.info("No Wyze RSTP device camera found. Falling back to Wyze SDK.")
 
         wyze_device_camera = self._create_wyze_sdk(env=env)
 
@@ -28,7 +30,9 @@ class DeviceCameraFactory:
             self._logger.info("Using Wyze SDK device camera")
             return wyze_device_camera
 
-        self._logger.info("Using Wyze SDK device camera")
+        self._logger.info(
+            "No Wyze SDK device camera found. Falling back to indexed camera."
+        )
 
         indexed = self._create_indexed()
 

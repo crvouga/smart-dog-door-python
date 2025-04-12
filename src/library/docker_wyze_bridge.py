@@ -36,7 +36,8 @@ class DockerWyzeBridge:
     def stream_list_url(self) -> str:
         return f"http://{self.host_ip}:8888/"
 
-    def all_urls(self) -> WyzeBridgeUrls:
+    @property
+    def urls(self) -> WyzeBridgeUrls:
         return WyzeBridgeUrls(
             rtsp=self.rtsp_url,
             hls=self.hls_url,
