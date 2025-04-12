@@ -31,6 +31,10 @@ check:
 	mypy .
 	pytest
 
+
+cloc:
+	clear
+	npx cloc src
 # Install dependencies
 install:
 	pip install -r requirements.txt

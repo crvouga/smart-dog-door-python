@@ -3,6 +3,7 @@
     "augreg",
     "AVFOUNDATION",
     "certifi",
+    "cloc",
     "colorama",
     "contourpy",
     "convnext",
