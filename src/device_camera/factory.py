@@ -1,7 +1,7 @@
 import logging
 from typing import Optional
 from src.device_camera.interface import DeviceCamera
-from src.device_camera.impl_rstp import RstpDeviceCamera
+from src.device_camera.impl_rtsp import RtspDeviceCamera
 from src.device_camera.impl_indexed import IndexedDeviceCamera
 from src.device_camera.impl_wyze_client import WyzeSdkCamera
 from src.library.wyze_sdk.wyze_client import WyzeClient, WyzeDevice
@@ -45,13 +45,21 @@ class DeviceCameraFactory:
     def _create_wyze_rstp(self, env: Env) -> Optional[DeviceCamera]:
         """Create a Wyze camera using RTSP protocol."""
         self._logger.info("Initializing Wyze RSTP device camera")
+
         wyze_client = self._init_wyze_client(env=env)
+
         wyze_device = self._get_wyze_device(wyze_client=wyze_client)
+
         if not wyze_device:
             return None
 
-        wyze_bridge = DockerWyzeBridge(camera_name=wyze_device.name)
-        wyze_device_camera = RstpDeviceCamera(
+        wyze_bridge = DockerWyzeBridge(
+            camera_name=wyze_device.name,
+            host_ip=env.wyze_bridge_host_ip,
+            api_key=env.wyze_bridge_api_key,
+        )
+
+        wyze_device_camera = RtspDeviceCamera(
             logger=self._logger, rtsp_url=wyze_bridge.rtsp_url
         )
         return wyze_device_camera

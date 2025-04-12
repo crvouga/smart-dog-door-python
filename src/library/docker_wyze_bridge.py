@@ -16,13 +16,15 @@ class WyzeBridgeUrls:
 
 
 class DockerWyzeBridge:
-    def __init__(self, camera_name: str, host_ip: Optional[str] = None):
-        self.host_ip = (host_ip or get_host_ip()).strip()
+    def __init__(self, camera_name: str, host_ip: str, api_key: str):
+        self.host_ip = host_ip
         self.camera_name = camera_name
+        self.api_key = api_key
 
     @property
     def rtsp_url(self) -> str:
-        return f"rtsp://{self.host_ip}:8554/{self.camera_name}"
+        # Format: rtsp://username:password@host:port/path
+        return f"rtsp://wb:{self.api_key}@{self.host_ip}:8554/{self.camera_name}"
 
     @property
     def hls_url(self) -> str:

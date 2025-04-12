@@ -11,6 +11,8 @@ class Env:
     wyze_api_key: SecretString
     wyze_email: str
     wyze_password: SecretString
+    wyze_bridge_host_ip: str
+    wyze_bridge_api_key: str
 
     @classmethod
     def load(cls) -> "Env":
@@ -30,11 +32,17 @@ class Env:
             secret=_ensure_non_empty_string(os.getenv("WYZE_PASSWORD")),
         )
 
+        wyze_bridge_host_ip = _ensure_non_empty_string(os.getenv("WYZE_BRIDGE_HOST_IP"))
+
+        wyze_bridge_api_key = _ensure_non_empty_string(os.getenv("WYZE_BRIDGE_API_KEY"))
+
         env = cls(
             wyze_key_id=wyze_key_id,
             wyze_api_key=wyze_api_key,
             wyze_email=wyze_email,
             wyze_password=wyze_password,
+            wyze_bridge_host_ip=wyze_bridge_host_ip,
+            wyze_bridge_api_key=wyze_bridge_api_key,
         )
 
         return env
