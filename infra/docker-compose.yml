@@ -1,6 +1,7 @@
 name: smart-dog-door
 
 services:
+  # https://github.com/mrlt8/docker-wyze-bridge
   wyze-bridge:
     image: mrlt8/wyze-bridge:latest
     container_name: wyze-bridge
@@ -14,6 +15,10 @@ services:
       - WB_USERNAME=username        # WebUI username
       - WB_PASSWORD=password # WebUI password
       - WB_AUTH=true            # Enable WebUI authentication
+      - WYZE_EMAIL=${WYZE_EMAIL}
+      - WYZE_PASSWORD=${WYZE_PASSWORD}
+      - API_ID=${WYZE_KEY_ID}
+      - API_KEY=${WYZE_API_KEY}
     volumes:
       - wyze-config:/config
     logging:
