@@ -22,6 +22,8 @@ class IndexedDeviceCamera(DeviceCamera):
     _cap: Optional[cv2.VideoCapture]
     _latest_frame: Optional[cv2.typing.MatLike]
     _connected: bool
+    _frame_thread: Optional[threading.Thread]
+    _running: bool
 
     def __init__(self, logger: Logger, device_ids: List[int]):
         self._logger = logger.getChild("indexed_device_camera")
@@ -32,16 +34,37 @@ class IndexedDeviceCamera(DeviceCamera):
         self._cap = None
         self._latest_frame = None
         self._connected = False
+        self._frame_thread = None
+        self._running = False
         self._logger.info(f"Initialized for camera IDs: {device_ids}")
 
     def start(self) -> None:
         self._logger.info("Starting IndexedDeviceCamera...")
-        self._attempt_connection()
+        self._running = True
+        if self._attempt_connection():
+            self._start_frame_processing()
 
     def stop(self) -> None:
         self._logger.info("Stopping IndexedDeviceCamera...")
+        self._running = False
+        if self._frame_thread and self._frame_thread.is_alive():
+            self._frame_thread.join(timeout=1.0)
         self._cleanup_camera()
         self._logger.info("IndexedDeviceCamera stopped.")
+
+    def _start_frame_processing(self) -> None:
+        self._frame_thread = threading.Thread(
+            target=self._frame_processing_loop,
+            daemon=True,
+            name="IndexedDeviceCamera-FrameProcessor",
+        )
+        self._frame_thread.start()
+        self._logger.debug("Frame processing thread started")
+
+    def _frame_processing_loop(self) -> None:
+        while self._running and self._connected:
+            self._process_frames()
+            threading.Event().wait(0.03)  # ~30 FPS
 
     def _cleanup_camera(self) -> None:
         with self._lock:
@@ -73,6 +96,7 @@ class IndexedDeviceCamera(DeviceCamera):
     def capture(self) -> List[Image]:
         with self._lock:
             if not self._connected or self._latest_frame is None:
+                self._logger.debug("No frame available for capture")
                 return []
             # Convert color space BGR (OpenCV default) to RGB
             frame_rgb = cv2.cvtColor(self._latest_frame, cv2.COLOR_BGR2RGB)
@@ -96,10 +120,21 @@ class IndexedDeviceCamera(DeviceCamera):
                 )
                 return False
 
+            # Test read a frame to ensure camera is working
+            ret, test_frame = cap.read()
+            if not ret or test_frame is None:
+                self._logger.warning(
+                    f"Camera {device_id} opened but failed to read test frame"
+                )
+                cap.release()
+                return False
+
             with self._lock:
                 self._cap = cap
+                self._latest_frame = test_frame  # Store the test frame
                 self._connected = True
                 self._publish_event(EventCameraConnected())
+            self._logger.info(f"Successfully connected to camera {device_id}")
             return True
         except Exception as e:
             self._logger.error(f"Error connecting to camera {device_id}: {e}")

@@ -5,7 +5,8 @@ from .event import EventCamera, EventCameraConnected
 from logging import Logger
 from itertools import cycle
 import threading
-from typing import Iterator
+import time
+from typing import Iterator, Callable
 
 
 class WithFallbacks(DeviceCamera):
@@ -15,11 +16,18 @@ class WithFallbacks(DeviceCamera):
     _lock: threading.Lock
     _connected: bool
     _events: PubSub[EventCamera]
+    _max_retry_attempts: int
+    _current_retry_count: int
+    _retry_interval: float
+    _time_sleep: Callable[[float], None]
 
     def __init__(
         self,
         devices: list[DeviceCamera],
         logger: Logger,
+        max_retry_attempts: int = 3,
+        retry_interval: float = 5.0,
+        time_sleep: Callable[[float], None] = time.sleep,
     ):
         if not devices:
             raise ValueError("At least one device must be provided")
@@ -32,7 +40,13 @@ class WithFallbacks(DeviceCamera):
         self._lock = threading.Lock()
         self._connected = False
         self._events = PubSub[EventCamera]()
-        self._logger.info("WithFallbacks initialized successfully")
+        self._max_retry_attempts = max_retry_attempts
+        self._current_retry_count = 0
+        self._retry_interval = retry_interval
+        self._time_sleep = time_sleep
+        self._logger.info(
+            f"WithFallbacks initialized successfully with {max_retry_attempts} retry attempts per device"
+        )
 
     def start(self) -> None:
         """Start the current camera device."""
@@ -57,12 +71,12 @@ class WithFallbacks(DeviceCamera):
 
             frames = self._current_device.capture()
             if not frames:
-                self._logger.warning(
-                    "Device returned empty frame list, trying next device"
-                )
-                self._handle_connection_failure()
-                return self.capture()  # Recursively try next device
+                self._logger.warning("Device returned empty frame list")
+                # Just return empty frames instead of trying next device
+                return []
 
+            # Reset retry count on successful capture
+            self._current_retry_count = 0
             return frames
         except Exception as e:
             self._logger.error(f"Error capturing frames: {e}", exc_info=True)
@@ -116,24 +130,47 @@ class WithFallbacks(DeviceCamera):
         self._logger.debug(
             f"Starting device rotation from {start_device.__class__.__name__}"
         )
+        self._current_retry_count = 0
         while True:
             self._log_device_info("Trying to connect to")
             if self._try_connect_current_device():
                 self._log_device_info("Successfully connected to", level="info")
+                self._current_retry_count = 0
                 return True
 
+            self._current_retry_count += 1
+            if self._current_retry_count < self._max_retry_attempts:
+                self._logger.info(
+                    f"Retry attempt {self._current_retry_count}/{self._max_retry_attempts} for current device"
+                )
+                self._logger.info(
+                    f"Sleeping for {self._retry_interval} seconds before retry"
+                )
+                self._time_sleep(self._retry_interval)
+                continue
+
+            # Reset retry count and move to next device
+            self._current_retry_count = 0
             self._switch_to_next_device()
 
             if self._current_device == start_device:
-                self._logger.error("Tried all devices, none could connect")
+                self._logger.error(
+                    "Tried all devices with maximum retries, none could connect"
+                )
                 self._connected = False
                 return False
 
     def _try_connect_current_device(self) -> bool:
-        self._log_device_info("Attempting to connect to device", level="info")
+        self._log_device_info(
+            f"Attempting to connect to device (attempt {self._current_retry_count + 1}/{self._max_retry_attempts})",
+            level="info",
+        )
         if not self._current_device._attempt_connection():
             self._log_device_info("Failed to connect to", level="warning")
-            self._logger.warning("Trying next fallback...")
+            if self._current_retry_count + 1 >= self._max_retry_attempts:
+                self._logger.warning(
+                    "Maximum retry attempts reached, trying next fallback..."
+                )
             return False
 
         self._connected = True
@@ -145,8 +182,23 @@ class WithFallbacks(DeviceCamera):
         with self._lock:
             self._connected = False
             current_device_name = self._current_device.__class__.__name__
+
+            self._current_retry_count += 1
+            if self._current_retry_count < self._max_retry_attempts:
+                self._logger.warning(
+                    f"Connection to current device {current_device_name} failed, retry attempt {self._current_retry_count}/{self._max_retry_attempts}"
+                )
+                self._current_device._handle_connection_failure()
+                self._logger.info(
+                    f"Sleeping for {self._retry_interval} seconds before retry"
+                )
+                self._time_sleep(self._retry_interval)
+                return
+
+            # Reset retry count and move to next device
+            self._current_retry_count = 0
             self._logger.warning(
-                f"Connection to current device {current_device_name} failed, switching to next fallback..."
+                f"Connection to current device {current_device_name} failed after {self._max_retry_attempts} attempts, switching to next fallback..."
             )
             self._current_device._handle_connection_failure()
             self._current_device.stop()
