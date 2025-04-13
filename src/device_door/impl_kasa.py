@@ -77,8 +77,12 @@ class KasaDeviceDoor(DeviceDoor, LifeCycle):
 
     async def _async_open(self) -> None:
         if self._plug is not None:
-            await self._plug.turn_on()
-            self._is_on = True
+            try:
+                await self._plug.turn_on()
+                self._is_on = True
+            except Exception as e:
+                self._logger.error(f"Communication error on open: {e}")
+                raise
 
     def close(self) -> None:
         if not self._plug:
@@ -94,8 +98,12 @@ class KasaDeviceDoor(DeviceDoor, LifeCycle):
 
     async def _async_close(self) -> None:
         if self._plug is not None:
-            await self._plug.turn_off()
-            self._is_on = False
+            try:
+                await self._plug.turn_off()
+                self._is_on = False
+            except Exception as e:
+                self._logger.error(f"Communication error on close: {e}")
+                raise
 
     def is_open(self) -> bool:
         if not self._plug:
@@ -110,8 +118,12 @@ class KasaDeviceDoor(DeviceDoor, LifeCycle):
 
     async def _async_is_open(self) -> bool:
         if self._plug is not None:
-            await self._plug.update()  # Get the latest state
-            self._is_on = self._plug.is_on
+            try:
+                await self._plug.update()  # Get the latest state
+                self._is_on = self._plug.is_on
+            except Exception as e:
+                self._logger.error(f"Communication error on status check: {e}")
+                raise
         return self._is_on
 
     def events(self) -> Sub[EventDoor]:

@@ -37,6 +37,7 @@ class DesktopClient(LifeCycle):
         device_camera_factory = DeviceCameraFactory(logger=self._logger)
 
         device_camera = device_camera_factory.create_from_env(env=env)
+        device_camera = device_camera_factory.create_indexed()
 
         self._device_camera = device_camera
 
