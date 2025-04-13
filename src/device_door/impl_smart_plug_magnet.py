@@ -10,6 +10,7 @@ from src.library.smart_plug.interface import (
     SmartPlugConnectedEvent,
     SmartPlugDisconnectedEvent,
     SmartPlugStateChangedEvent,
+    SmartPlugState,
 )
 
 
@@ -39,6 +40,13 @@ class SmartPlugMagnetDeviceDoor(DeviceDoor):
 
         # Start the smart plug
         self._smart_plug.start()
+
+        # Set initial state to closed (ON) for safety
+        self._logger.info("Setting initial door state to closed")
+        try:
+            self.close()
+        except Exception as e:
+            self._logger.error(f"Failed to set initial door state: {e}")
 
         # Start event handler thread
         self._event_handler = threading.Thread(target=self._handle_smart_plug_events)

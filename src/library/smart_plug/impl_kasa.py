@@ -31,6 +31,7 @@ class KasaSmartPlug(SmartPlug, LifeCycle):
     _polling_interval: timedelta = timedelta(seconds=10.0)
     _max_retries: int = 3
     _retry_delay: timedelta = timedelta(seconds=1.0)
+    _event_loop: Optional[asyncio.AbstractEventLoop] = None
 
     def __init__(self, logger: logging.Logger, ip_address: str) -> None:
         self._logger = logger.getChild("kasa_smart_plug")
@@ -59,7 +60,10 @@ class KasaSmartPlug(SmartPlug, LifeCycle):
                 self._logger.debug(
                     f"Attempting to connect to Kasa device at {self._ip_address}"
                 )
-                asyncio.run(self._async_start())
+                # Create a new event loop for this thread
+                self._event_loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(self._event_loop)
+                self._event_loop.run_until_complete(self._async_start())
                 self._logger.info(
                     f"Kasa smart plug started, initial state: {self._state.name}"
                 )
@@ -73,6 +77,10 @@ class KasaSmartPlug(SmartPlug, LifeCycle):
                     f"Retrying in {self._retry_interval.total_seconds()} seconds..."
                 )
                 time.sleep(self._retry_interval.total_seconds())
+            finally:
+                # Clean up the event loop
+                if self._event_loop and not self._event_loop.is_closed():
+                    self._event_loop.close()
 
     def _start_polling(self) -> None:
         self._logger.debug("Starting polling mechanism")
@@ -85,26 +93,37 @@ class KasaSmartPlug(SmartPlug, LifeCycle):
 
     def _polling_loop(self) -> None:
         self._logger.debug("Entering polling loop")
-        while self._is_running and self._plug is not None:
-            try:
-                self._logger.debug("Polling current device state")
-                previous_state = self._state
-                current_state = self.get_state()
-                self._logger.debug(f"Poll result: device state is {current_state.name}")
+        # Create a new event loop for this thread
+        polling_event_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(polling_event_loop)
 
-                if previous_state != current_state:
-                    self._logger.info(f"Plug state changed: {current_state.name}")
-                    self._pub_sub.publish(
-                        SmartPlugStateChangedEvent("state_changed", current_state)
+        try:
+            while self._is_running and self._plug is not None:
+                try:
+                    self._logger.debug("Polling current device state")
+                    previous_state = self._state
+                    current_state = self.get_state()
+                    self._logger.debug(
+                        f"Poll result: device state is {current_state.name}"
                     )
 
-                time.sleep(self._polling_interval.total_seconds())
-            except Exception as e:
-                self._logger.error(f"Error during state polling: {e}")
-                self._logger.debug(
-                    f"Will retry polling in {self._retry_interval.total_seconds()} seconds"
-                )
-                time.sleep(self._retry_interval.total_seconds())
+                    if previous_state != current_state:
+                        self._logger.info(f"Plug state changed: {current_state.name}")
+                        self._pub_sub.publish(
+                            SmartPlugStateChangedEvent("state_changed", current_state)
+                        )
+
+                    time.sleep(self._polling_interval.total_seconds())
+                except Exception as e:
+                    self._logger.error(f"Error during state polling: {e}")
+                    self._logger.debug(
+                        f"Will retry polling in {self._retry_interval.total_seconds()} seconds"
+                    )
+                    time.sleep(self._retry_interval.total_seconds())
+        finally:
+            # Clean up the event loop
+            if not polling_event_loop.is_closed():
+                polling_event_loop.close()
 
     async def _async_start(self) -> None:
         self._logger.debug(f"Discovering Kasa device at {self._ip_address}")
@@ -154,7 +173,11 @@ class KasaSmartPlug(SmartPlug, LifeCycle):
         if self._plug is not None:
             try:
                 self._logger.info("Turning off plug before disconnecting")
-                asyncio.run(self._turn_off_plug())
+                # Create a new event loop for shutdown
+                shutdown_loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(shutdown_loop)
+                shutdown_loop.run_until_complete(self._turn_off_plug())
+                shutdown_loop.close()
                 self._logger.debug("Plug turned off successfully")
             except Exception as e:
                 self._logger.error(f"Failed to turn off plug during shutdown: {e}")
@@ -197,7 +220,11 @@ class KasaSmartPlug(SmartPlug, LifeCycle):
                 self._logger.debug(
                     f"{operation.capitalize()} attempt {attempt+1}/{self._max_retries}"
                 )
-                asyncio.run(async_func())
+                # Create a new event loop for this operation
+                operation_loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(operation_loop)
+                operation_loop.run_until_complete(async_func())
+                operation_loop.close()
                 self._logger.info(f"Kasa smart plug {operation} successful")
                 return True
             except Exception as e:
@@ -251,10 +278,15 @@ class KasaSmartPlug(SmartPlug, LifeCycle):
                 self._logger.debug(
                     f"Status check attempt {attempt+1}/{self._max_retries}"
                 )
-                asyncio.run(self._async_update_state())
+                # Create a new event loop for this status check
+                status_loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(status_loop)
+                status_loop.run_until_complete(self._async_update_state())
+                status_loop.close()
                 self._logger.debug(f"Plug state is {self._state.name}")
                 return self._state
             except Exception as e:
+                self._logger.error(f"Communication error on status check: {e}")
                 self._logger.error(
                     f"Failed to get Kasa smart plug state (attempt {attempt+1}/{self._max_retries}): {e}"
                 )
@@ -288,7 +320,11 @@ class KasaSmartPlug(SmartPlug, LifeCycle):
             # This is a simplified implementation - actual implementation would depend
             # on the specific Kasa device capabilities
             if hasattr(self._plug, "emeter"):
-                result = asyncio.run(self._async_get_power_usage())
+                # Create a new event loop for power usage check
+                power_loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(power_loop)
+                result = power_loop.run_until_complete(self._async_get_power_usage())
+                power_loop.close()
                 return result
             else:
                 self._logger.debug("This Kasa device doesn't support power monitoring")
