@@ -12,6 +12,7 @@
     "docopt",
     "dotenv",
     "efficientnet",
+    "emeter",
     "exceptiongroup",
     "filelock",
     "fonttools",
