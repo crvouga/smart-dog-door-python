@@ -1,5 +1,6 @@
 from logging import Logger
 from src.device_camera.impl_fake import FakeDeviceCamera
+from src.device_camera.interface import DeviceCamera
 from src.image_classifier.impl_yolo import YoloImageClassifier, YoloModelSize
 from src.smart_door.core import (
     MsgCameraEvent,
@@ -19,7 +20,7 @@ from src.smart_door.core.msg import Msg
 class BaseFixture:
     def __init__(self) -> None:
         self.logger = Logger("test")
-        self.device_camera = FakeDeviceCamera(logger=self.logger)
+        self.device_camera: DeviceCamera = FakeDeviceCamera(logger=self.logger)
         self.image_classifier = YoloImageClassifier(model_size=YoloModelSize.NANO)
 
     def init(self) -> tuple[Model, list[Effect]]:

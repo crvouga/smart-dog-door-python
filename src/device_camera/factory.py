@@ -4,6 +4,7 @@ from src.device_camera.interface import DeviceCamera
 from src.device_camera.impl_rtsp import RtspDeviceCamera
 from src.device_camera.impl_indexed import IndexedDeviceCamera
 from src.device_camera.impl_wyze_client import WyzeSdkCamera
+from src.device_camera.with_retry import WithRetry
 from src.library.wyze_sdk.wyze_client import WyzeClient, WyzeDevice
 from src.library.docker_wyze_bridge import DockerWyzeBridge
 from src.env import Env
@@ -14,6 +15,10 @@ class DeviceCameraFactory:
         self._logger = logger.getChild("device_camera_factory")
 
     def create_from_env(self, env: Env) -> DeviceCamera:
+        device_camera = self._create_from_env(env=env)
+        return WithRetry(wrapped=device_camera, logger=self._logger)
+
+    def _create_from_env(self, env: Env) -> DeviceCamera:
         """Factory method to create the appropriate camera based on environment configuration."""
 
         wyze_rtsp_device_camera = self._create_wyze_rtsp(env=env)

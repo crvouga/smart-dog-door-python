@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional
 import asyncio
 import kasa
 import kasa.discover
@@ -19,7 +19,7 @@ class KasaDeviceDoor(DeviceDoor, LifeCycle):
     _pub_sub: PubSub[EventDoor]
     _retry_interval: float = 5.0  # seconds between retries
     _is_running: bool = False
-    _connection_thread: threading.Thread = None
+    _connection_thread: Optional[threading.Thread] = None
 
     def __init__(self, logger: logging.Logger, ip_address: str) -> None:
         self._logger = logger.getChild("kasa_device_door")

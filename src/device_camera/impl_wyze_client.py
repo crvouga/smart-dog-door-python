@@ -14,14 +14,12 @@ class WyzeSdkCamera(DeviceCamera):
     _wyze_client: WyzeClient
     _device_mac: str
     _device_model: str
-    _pub_sub: PubSub[Union[EventCameraConnected, EventCameraDisconnected]]
+    _pub_sub: PubSub[EventCamera]
     _capture_thread: Optional[threading.Thread]
     _running: bool
     _lock: threading.Lock
     _latest_frame: Optional[Image]
     _connected: bool
-    _error_count: int
-    _max_errors: int = 5  # Maximum number of consecutive errors before stopping
 
     def __init__(
         self,
@@ -34,13 +32,12 @@ class WyzeSdkCamera(DeviceCamera):
         self._device_mac = device_mac
         self._device_model = device_model
         self._wyze_client = wyze_client
-        self._pub_sub = PubSub[Union[EventCameraConnected, EventCameraDisconnected]]()
+        self._pub_sub = PubSub[EventCamera]()
         self._capture_thread = None
         self._running = False
         self._lock = threading.Lock()
         self._latest_frame = None
         self._connected = False
-        self._error_count = 0
 
         self._log_list_cameras()
         self._log_details()
@@ -67,7 +64,6 @@ class WyzeSdkCamera(DeviceCamera):
             return
 
         self._running = True
-        self._error_count = 0
         self._capture_thread = threading.Thread(target=self._capture_loop, daemon=True)
         self._capture_thread.start()
         self._logger.info("Capture thread started.")
@@ -85,46 +81,60 @@ class WyzeSdkCamera(DeviceCamera):
                 self._logger.warning("Capture thread did not exit cleanly.")
             self._capture_thread = None
 
-    def _capture_loop(self) -> None:
-        while self._running:
-            try:
-                # Get camera snapshot
+    def is_connected(self) -> bool:
+        with self._lock:
+            return self._connected
 
-                response = self._wyze_client.wyze_sdk_client.cameras.turn_on(
-                    device_mac=self._device_mac,
-                    device_model=self._device_model,
-                )
+    def _attempt_connection(self) -> bool:
+        try:
+            response = self._wyze_client.wyze_sdk_client.cameras.turn_on(
+                device_mac=self._device_mac,
+                device_model=self._device_model,
+            )
+            if response and response.data:
+                with self._lock:
+                    self._connected = True
+                    self._pub_sub.publish(EventCameraConnected())
+                return True
+            return False
+        except Exception as e:
+            self._logger.error(f"Error connecting to camera: {e}")
+            return False
 
-                print("response", response)
-                return
-                if response and response.data:
-                    frame = Image.from_np_array(response.data)
-                    with self._lock:
-                        self._latest_frame = frame
+    def _handle_connection_failure(self) -> None:
+        with self._lock:
+            if self._connected:
+                self._connected = False
+                self._pub_sub.publish(EventCameraDisconnected())
+            self._latest_frame = None
+
+    def _process_frames(self) -> None:
+        try:
+            response = self._wyze_client.wyze_sdk_client.cameras.turn_on(
+                device_mac=self._device_mac,
+                device_model=self._device_model,
+            )
+
+            if response and response.data:
+                frame = Image.from_np_array(response.data)
+                with self._lock:
+                    self._latest_frame = frame
                     if not self._connected:
                         self._connected = True
                         self._pub_sub.publish(EventCameraConnected())
-                    self._error_count = 0  # Reset error count on successful capture
-                else:
-                    if self._connected:
-                        self._connected = False
-                        self._pub_sub.publish(EventCameraDisconnected())
-                    self._error_count += 1
-            except Exception as e:
-                self._logger.error(f"Error capturing frame: {e}")
-                if self._connected:
-                    self._connected = False
-                    self._pub_sub.publish(EventCameraDisconnected())
-                self._error_count += 1
+            else:
+                self._handle_connection_failure()
+        except Exception as e:
+            self._logger.error(f"Error capturing frame: {e}")
+            self._handle_connection_failure()
 
-            # Stop if we've hit too many consecutive errors
-            if self._error_count >= self._max_errors:
-                self._logger.error(
-                    f"Too many consecutive errors ({self._error_count}). Stopping camera."
-                )
-                self._running = False
-                break
+    def _capture_loop(self) -> None:
+        while self._running:
+            if not self.is_connected():
+                if not self._attempt_connection():
+                    continue
 
+            self._process_frames()
             time.sleep(0.1)  # 10 FPS
 
     def capture(self) -> list[Image]:
@@ -133,5 +143,5 @@ class WyzeSdkCamera(DeviceCamera):
                 return []
             return [self._latest_frame]
 
-    def events(self) -> Sub[Union[EventCameraConnected, EventCameraDisconnected]]:
+    def events(self) -> Sub[EventCamera]:
         return self._pub_sub
