@@ -43,7 +43,7 @@ class WidgetCameraFeed(QWidget):
         self.setLayout(layout)
 
         self._feed_label = QLabel()
-        self._feed_label.setAlignment(Qt.AlignCenter)
+        self._feed_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self._feed_label)
         self._painter_connected = PainterConnected(self._feed_label)
         self._painter_loading = PainterLoading(self._feed_label)

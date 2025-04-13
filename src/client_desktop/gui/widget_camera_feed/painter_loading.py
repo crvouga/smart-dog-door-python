@@ -1,5 +1,6 @@
 from PySide6.QtWidgets import QLabel  # type: ignore
 from PySide6.QtGui import QPixmap, QPainter, QColor, QFont  # type: ignore
+from PySide6.QtCore import Qt  # type: ignore
 
 
 class PainterLoading:
@@ -13,11 +14,10 @@ class PainterLoading:
         pixmap.fill(QColor(0, 0, 0, 50))  # Semi-transparent black
 
         painter = QPainter(pixmap)
-        painter.setPen(QColor(255, 255, 255))
+        painter.setPen(Qt.GlobalColor.white)
 
-        font = self._feed_label.font()
-        font.setPointSize(font.pointSize() * 2)
-        font.setWeight(QFont.Bold)
+        font = QFont()
+        font.setBold(True)
         painter.setFont(font)
 
         text = "Loading Camera..."

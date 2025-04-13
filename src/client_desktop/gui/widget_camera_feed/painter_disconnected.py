@@ -19,7 +19,7 @@ class PainterDisconnected:
         # Create a larger, bolder font
         font = self._feed_label.font()
         font.setPointSize(font.pointSize() * 2)  # Double the font size
-        font.setWeight(QFont.Bold)  # Make it bold
+        font.setWeight(QFont.Weight.Bold)  # Make it bold
         painter.setFont(font)
 
         text = "Camera Disconnected"

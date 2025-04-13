@@ -2,8 +2,7 @@
 .PHONY: run test install lint clean develop
 
 PYTHON_MIN_VERSION = 3.10
-PYTHON_VERSION := $(shell python -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
-
+PYTHON_VERSION := $(shell python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
 
 # Default target executed when no arguments are given to make
 default: start
@@ -11,40 +10,42 @@ default: start
 # Run the application
 start:
 	clear
-	python main.py
+	python3 main.py
 
 dev:
-	watchmedo auto-restart --patterns="*.py" --ignore-patterns="*.pyc,__pycache__/*" --recursive  --debounce-interval=1.0 -- python ./main.py
+	watchmedo auto-restart --patterns="*.py" --ignore-patterns="*.pyc,__pycache__/*" --recursive  --debounce-interval=1.0 -- python3 ./main.py
 
 # Run tests
 test:
 	clear
-	pytest
+	python3 -m pytest
 
 # Run type checking
 tc:
 	clear
-	mypy .
+	python3 -m mypy .
 
 check:
 	clear
-	mypy .
-	pytest
+	python3 -m mypy .
+	python3 -m pytest
 
+reset:
+	make clean
+	make install
 
 cloc:
 	clear
 	npx cloc src
+
 # Install dependencies
 install:
-	pip install -r requirements.txt
+	python3 -m pip install -r requirements.txt
 
 # Lint and format code
 lint:
-	flake8 .
-	black .
-
-
+	python3 -m flake8 .
+	python3 -m black .
 
 # Start Docker Compose services
 infra-up:
@@ -66,14 +67,14 @@ clean:
 
 # Create a virtualenv
 venv:
-	python -m venv venv
+	python3 -m venv venv
 	@echo "Run 'source venv/bin/activate' to activate the virtual environment"
 
 # Info about Python version
 python-info:
 	@echo "Required Python version: $(PYTHON_MIN_VERSION)+"
 	@echo "Current Python version: $(PYTHON_VERSION)"
-	@python --version
+	@python3 --version
 
 # Help command
 help:

@@ -13,7 +13,7 @@ class DeviceCameraFactory:
     def __init__(self, logger: logging.Logger) -> None:
         self._logger = logger.getChild("device_camera_factory")
 
-    def create_from_env(self, env: Env) -> Optional[DeviceCamera]:
+    def create_from_env(self, env: Env) -> DeviceCamera:
         """Factory method to create the appropriate camera based on environment configuration."""
 
         wyze_rtsp_device_camera = self._create_wyze_rtsp(env=env)
@@ -34,11 +34,11 @@ class DeviceCameraFactory:
             "No Wyze SDK device camera found. Falling back to indexed camera."
         )
 
-        indexed = self._create_indexed()
+        indexed = self.create_indexed()
 
         return indexed
 
-    def _create_indexed(self) -> IndexedDeviceCamera:
+    def create_indexed(self) -> IndexedDeviceCamera:
         """Create a camera using device index (e.g., webcam)."""
         return IndexedDeviceCamera(logger=self._logger, device_ids=[0])
 

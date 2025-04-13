@@ -13,6 +13,7 @@ class Env:
     wyze_password: SecretString
     wyze_bridge_host_ip: str
     wyze_bridge_api_key: str
+    kasa_device_ip: str
 
     @classmethod
     def load(cls) -> "Env":
@@ -32,9 +33,15 @@ class Env:
             secret=_ensure_non_empty_string(os.getenv("WYZE_PASSWORD")),
         )
 
-        wyze_bridge_host_ip = _ensure_non_empty_string(os.getenv("WYZE_BRIDGE_HOST_IP"))
+        wyze_bridge_host_ip = _ensure_non_empty_string(
+            os.getenv("WYZE_BRIDGE_HOST_IP", "localhost")
+        )
 
-        wyze_bridge_api_key = _ensure_non_empty_string(os.getenv("WYZE_BRIDGE_API_KEY"))
+        wyze_bridge_api_key = _ensure_non_empty_string(
+            os.getenv("WYZE_BRIDGE_API_KEY", "My-Custom-API-Key-For-WebUI")
+        )
+
+        kasa_device_ip = _ensure_non_empty_string(os.getenv("KASA_DEVICE_IP"))
 
         env = cls(
             wyze_key_id=wyze_key_id,
@@ -43,6 +50,7 @@ class Env:
             wyze_password=wyze_password,
             wyze_bridge_host_ip=wyze_bridge_host_ip,
             wyze_bridge_api_key=wyze_bridge_api_key,
+            kasa_device_ip=kasa_device_ip,
         )
 
         return env

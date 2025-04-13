@@ -40,7 +40,7 @@ class WindowDebug(QMainWindow):
 
     def _setup_background(self) -> None:
         palette = self.palette()
-        palette.setColor(QPalette.Window, QColor(0, 0, 0))
+        palette.setColor(QPalette.ColorRole.Window, QColor(0, 0, 0))
         self.setPalette(palette)
         self.setAutoFillBackground(True)
 
@@ -57,7 +57,7 @@ class WindowDebug(QMainWindow):
         self._model_label.setStyleSheet(
             "color: white; font-size: 14px; font-family: 'Courier New', monospace;"
         )
-        self._model_label.setAlignment(Qt.AlignLeft)
+        self._model_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self._main_layout.addWidget(self._model_label)
 
         def _set_model_label(model: Model):
@@ -70,7 +70,7 @@ class WindowDebug(QMainWindow):
         self._msgs_label.setStyleSheet(
             "color: white; font-size: 14px; font-family: 'Courier New', monospace;"
         )
-        self._msgs_label.setAlignment(Qt.AlignLeft)
+        self._msgs_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self._main_layout.addWidget(self._msgs_label)
 
         def _set_msgs_label(msg: Msg):

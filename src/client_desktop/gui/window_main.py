@@ -17,7 +17,7 @@ from src.smart_door.core.model import (
 
 ASPECT_RATIO_H_W = 9 / 16
 MIN_WIDTH = 500
-MIN_HEIGHT = MIN_WIDTH * ASPECT_RATIO_H_W
+MIN_HEIGHT = int(MIN_WIDTH * ASPECT_RATIO_H_W)
 
 
 class WindowMain(QMainWindow):
@@ -43,7 +43,7 @@ class WindowMain(QMainWindow):
 
     def _setup_window_background(self) -> None:
         palette = self.palette()
-        palette.setColor(QPalette.Window, QColor(0, 0, 0))
+        palette.setColor(QPalette.ColorRole.Window, QColor(0, 0, 0))
         self.setPalette(palette)
         self.setAutoFillBackground(True)
 
@@ -83,6 +83,6 @@ class WindowMain(QMainWindow):
         self._layout_main.addWidget(self._widget_door_status)
 
         def _update_door_status(model: Model):
-            self._widget_door_status.update(model)
+            self._widget_door_status.update_status(model)
 
         self._smart_door.models.subscribe(_update_door_status)

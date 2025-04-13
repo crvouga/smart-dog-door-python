@@ -17,7 +17,9 @@ class PainterConnected:
     def draw(self, q_image: QImage) -> None:
         original_pixmap = QPixmap.fromImage(q_image)
         scaled_pixmap = original_pixmap.scaled(
-            self._feed_label.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation
+            self._feed_label.size(),
+            Qt.AspectRatioMode.KeepAspectRatio,
+            Qt.TransformationMode.SmoothTransformation,
         )
 
         orig_w = original_pixmap.width()

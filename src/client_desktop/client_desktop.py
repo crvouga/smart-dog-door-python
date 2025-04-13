@@ -2,6 +2,7 @@ import logging
 from typing import Optional
 from src.client_desktop.gui.gui import Gui
 from src.device_camera.interface import DeviceCamera
+from src.device_door.factory import DeviceDoorFactory
 from src.library.life_cycle import LifeCycle
 from src.smart_door.smart_door import SmartDoor
 from src.device_door.impl_fake import FakeDeviceDoor
@@ -27,14 +28,15 @@ class DesktopClient(LifeCycle):
             model_size=YoloModelSize.EXTRA_LARGE
         )
 
-        self._device_door = FakeDeviceDoor(logger=self._logger)
+        device_door_factory = DeviceDoorFactory(logger=self._logger)
+
+        device_door = device_door_factory.create_from_env(env=env)
+
+        self._device_door = device_door
 
         device_camera_factory = DeviceCameraFactory(logger=self._logger)
 
         device_camera = device_camera_factory.create_from_env(env=env)
-
-        if not device_camera:
-            raise ValueError("No device camera found")
 
         self._device_camera = device_camera
 

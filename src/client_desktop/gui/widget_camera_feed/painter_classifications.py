@@ -56,7 +56,7 @@ class PainterClassifications:
         pen = QPen(color)
         pen.setWidth(BOUNDING_BOX_WIDTH)
         self._painter.setPen(pen)
-        self._painter.setBrush(Qt.NoBrush)
+        self._painter.setBrush(Qt.BrushStyle.NoBrush)
         self._painter.drawRoundedRect(x, y, width, height, BORDER_RADIUS, BORDER_RADIUS)
 
     def _draw_label(
@@ -78,7 +78,7 @@ class PainterClassifications:
         )
 
         background_color = LABEL_COLORS.get(classification.label, DEFAULT_LABEL_COLOR)
-        self._painter.setPen(Qt.NoPen)
+        self._painter.setPen(Qt.PenStyle.NoPen)
         self._painter.setBrush(background_color)
         self._painter.drawRoundedRect(
             text_x - LABEL_PADDING,
