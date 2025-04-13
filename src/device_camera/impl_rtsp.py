@@ -39,7 +39,7 @@ class RtspDeviceCamera(DeviceCamera):
         if not rtsp_url:
             raise ValueError("RTSP URL cannot be empty.")
 
-        self._logger = logger.getChild("rstp_device_camera")
+        self._logger = logger.getChild("rtsp_device_camera")
         self._rtsp_url = rtsp_url
         self._pub_sub = PubSub[EventCamera]()
         self._capture_thread = None

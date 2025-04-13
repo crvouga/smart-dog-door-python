@@ -16,13 +16,13 @@ class DeviceCameraFactory:
     def create_from_env(self, env: Env) -> Optional[DeviceCamera]:
         """Factory method to create the appropriate camera based on environment configuration."""
 
-        wyze_rstp_device_camera = self._create_wyze_rstp(env=env)
+        wyze_rtsp_device_camera = self._create_wyze_rtsp(env=env)
 
-        if wyze_rstp_device_camera:
-            self._logger.info("Using Wyze RSTP device camera")
-            return wyze_rstp_device_camera
+        if wyze_rtsp_device_camera:
+            self._logger.info("Using Wyze rtsp device camera")
+            return wyze_rtsp_device_camera
 
-        self._logger.info("No Wyze RSTP device camera found. Falling back to Wyze SDK.")
+        self._logger.info("No Wyze rtsp device camera found. Falling back to Wyze SDK.")
 
         wyze_device_camera = self._create_wyze_sdk(env=env)
 
@@ -42,9 +42,9 @@ class DeviceCameraFactory:
         """Create a camera using device index (e.g., webcam)."""
         return IndexedDeviceCamera(logger=self._logger, device_ids=[0])
 
-    def _create_wyze_rstp(self, env: Env) -> Optional[DeviceCamera]:
+    def _create_wyze_rtsp(self, env: Env) -> Optional[DeviceCamera]:
         """Create a Wyze camera using RTSP protocol."""
-        self._logger.info("Initializing Wyze RSTP device camera")
+        self._logger.info("Initializing Wyze rtsp device camera")
 
         wyze_client = self._init_wyze_client(env=env)
 
