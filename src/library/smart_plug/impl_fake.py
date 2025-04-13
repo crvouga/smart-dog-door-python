@@ -50,7 +50,6 @@ class FakeSmartPlug(SmartPlug, LifeCycle):
         self._state = SmartPlugState.OFF
         self._pub_sub.publish(SmartPlugConnectedEvent())
 
-        # Start polling thread if configured
         if self._config.get("enable_polling", True):
             self._start_polling()
 
@@ -61,7 +60,6 @@ class FakeSmartPlug(SmartPlug, LifeCycle):
         self._logger.info("Stopping fake smart plug")
         self._is_running = False
 
-        # Turn off the plug when stopping
         if self._connected:
             self._state = SmartPlugState.OFF
             self._connected = False
@@ -76,7 +74,6 @@ class FakeSmartPlug(SmartPlug, LifeCycle):
             self._logger.error("Cannot turn on: fake smart plug not connected")
             return False
 
-        # Simulate occasional failures if configured
         if self._config.get("simulate_failures", False) and self._should_fail():
             self._logger.error("Simulated failure when turning on")
             return False
@@ -93,7 +90,6 @@ class FakeSmartPlug(SmartPlug, LifeCycle):
             self._logger.error("Cannot turn off: fake smart plug not connected")
             return False
 
-        # Simulate occasional failures if configured
         if self._config.get("simulate_failures", False) and self._should_fail():
             self._logger.error("Simulated failure when turning off")
             return False
@@ -113,7 +109,6 @@ class FakeSmartPlug(SmartPlug, LifeCycle):
         if not self._connected or self._state != SmartPlugState.ON:
             return 0.0
 
-        # Return configured power usage or generate a random value
         if self._config.get("variable_power", False):
             import random
 
@@ -148,11 +143,10 @@ class FakeSmartPlug(SmartPlug, LifeCycle):
         self._logger.debug("Entering polling loop")
         while self._is_running and self._connected:
             try:
-                # Simulate state changes if configured
+
                 if self._config.get("simulate_state_changes", False):
                     self._simulate_state_change()
 
-                # Publish power usage events if the plug is on
                 if self._state == SmartPlugState.ON and self._config.get(
                     "report_power_usage", True
                 ):
@@ -165,13 +159,13 @@ class FakeSmartPlug(SmartPlug, LifeCycle):
                 time.sleep(self._polling_interval.total_seconds())
             except Exception as e:
                 self._logger.error(f"Error in polling loop: {e}")
-                time.sleep(1.0)  # Short delay before retrying
+                time.sleep(1.0)
 
     def _simulate_state_change(self) -> None:
         """Simulate random state changes for testing."""
         import random
 
-        if random.random() < 0.05:  # 5% chance of state change
+        if random.random() < 0.05:
             new_state = (
                 SmartPlugState.OFF
                 if self._state == SmartPlugState.ON
@@ -187,5 +181,5 @@ class FakeSmartPlug(SmartPlug, LifeCycle):
         """Determine if an operation should fail based on configured failure rate."""
         import random
 
-        failure_rate = self._config.get("failure_rate", 0.1)  # 10% default failure rate
+        failure_rate = self._config.get("failure_rate", 0.1)
         return random.random() < failure_rate

@@ -2,17 +2,20 @@ import logging
 from src.device_door.interface import DeviceDoor
 from src.device_door.impl_fake import FakeDeviceDoor
 from src.device_door.impl_kasa import KasaDeviceDoor
+from src.device_door.impl_smart_plug_magnet import SmartPlugMagnetDeviceDoor
 from src.env import Env
+from src.library.smart_plug.factory import SmartPlugFactory
 
 
 class DeviceDoorFactory:
     def __init__(self, logger: logging.Logger) -> None:
         self._logger = logger.getChild("device_door_factory")
+        self._smart_plug_factory = SmartPlugFactory(logger)
 
     def create_from_env(self, env: Env) -> DeviceDoor:
         """Factory method to create the appropriate door device based on environment configuration."""
         if self._should_create_kasa_door(env):
-            return self._create_kasa_door(env.kasa_device_ip)
+            return self._create_smart_plug_magnet_door(env)
         return self.create_fake_door()
 
     def _should_create_kasa_door(self, env: Env) -> bool:
@@ -26,7 +29,23 @@ class DeviceDoorFactory:
             return KasaDeviceDoor(logger=self._logger, ip_address=ip_address)
         except Exception as e:
             self._logger.error(f"Failed to create Kasa device door: {e}")
+            return self.create_smart_plug_magnet_door()
+
+    def _create_smart_plug_magnet_door(self, env: Env) -> DeviceDoor:
+        """Create a smart plug magnet door with the appropriate smart plug."""
+        try:
+            self._logger.info("Creating SmartPlugMagnetDeviceDoor")
+            smart_plug = self._smart_plug_factory.create_from_env(env)
+            return SmartPlugMagnetDeviceDoor(logger=self._logger, smart_plug=smart_plug)
+        except Exception as e:
+            self._logger.error(f"Failed to create smart plug magnet door: {e}")
             return self.create_fake_door()
+
+    def create_smart_plug_magnet_door(self) -> DeviceDoor:
+        """Create a smart plug magnet door with a fake smart plug."""
+        self._logger.info("Creating SmartPlugMagnetDeviceDoor with fake smart plug")
+        smart_plug = self._smart_plug_factory.create_fake_plug()
+        return SmartPlugMagnetDeviceDoor(logger=self._logger, smart_plug=smart_plug)
 
     def create_fake_door(self) -> DeviceDoor:
         """Create a fake door device as fallback."""
