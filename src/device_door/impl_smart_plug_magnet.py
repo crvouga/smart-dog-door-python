@@ -121,5 +121,14 @@ class SmartPlugMagnetDeviceDoor(DeviceDoor):
             self._pub_sub.publish(EventDoorDisconnected())
         elif isinstance(event, SmartPlugStateChangedEvent):
             self._logger.info(f"Smart plug state changed to {event.state.name}")
+            # Update internal state based on the smart plug state
+            if event.state == SmartPlugState.ON:
+                self._logger.debug("Door is now CLOSED due to smart plug state change")
+            elif event.state == SmartPlugState.OFF:
+                self._logger.debug("Door is now OPEN due to smart plug state change")
+            elif event.state == SmartPlugState.UNKNOWN:
+                self._logger.warning(
+                    "Door state is now UNKNOWN due to smart plug state change"
+                )
             # No direct door event for state changes, as open/close operations
             # will trigger their own events

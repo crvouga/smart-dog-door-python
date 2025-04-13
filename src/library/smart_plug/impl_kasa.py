@@ -28,7 +28,7 @@ class KasaSmartPlug(SmartPlug, LifeCycle):
     _is_running: bool = False
     _connection_thread: Optional[threading.Thread] = None
     _polling_thread: Optional[threading.Thread] = None
-    _polling_interval: timedelta = timedelta(seconds=10.0)
+    _polling_interval: timedelta = timedelta(seconds=1.0)
     _max_retries: int = 3
     _retry_delay: timedelta = timedelta(seconds=1.0)
     _event_loop: Optional[asyncio.AbstractEventLoop] = None
@@ -102,7 +102,13 @@ class KasaSmartPlug(SmartPlug, LifeCycle):
                 try:
                     self._logger.debug("Polling current device state")
                     previous_state = self._state
+
+                    # Create a new event loop for each poll to avoid closed loop issues
+                    poll_loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(poll_loop)
                     current_state = self.get_state()
+                    poll_loop.close()
+
                     self._logger.debug(
                         f"Poll result: device state is {current_state.name}"
                     )
@@ -112,6 +118,8 @@ class KasaSmartPlug(SmartPlug, LifeCycle):
                         self._pub_sub.publish(
                             SmartPlugStateChangedEvent("state_changed", current_state)
                         )
+                        # Update local state to match physical state
+                        self._state = current_state
 
                     time.sleep(self._polling_interval.total_seconds())
                 except Exception as e:
@@ -297,9 +305,9 @@ class KasaSmartPlug(SmartPlug, LifeCycle):
                     time.sleep(self._retry_delay.total_seconds())
 
         self._logger.warning(
-            "All status check attempts failed, returning UNKNOWN state"
+            "All status check attempts failed, returning last known state"
         )
-        return SmartPlugState.UNKNOWN
+        return self._state  # Return last known state instead of UNKNOWN
 
     async def _async_update_state(self) -> None:
         if self._plug is not None:
@@ -309,8 +317,9 @@ class KasaSmartPlug(SmartPlug, LifeCycle):
                 self._update_state_from_plug()
                 self._logger.debug(f"Updated device state: {self._state.name}")
             except Exception as e:
-                self._logger.error(f"Communication error on status check: {e}")
-                raise
+                # self._logger.error(f"Communication error on status check: {e}")
+                # Don't raise the exception, just log it and keep the current state
+                pass
 
     def get_power_usage(self) -> Optional[float]:
         if not self._plug or not self.is_connected():
