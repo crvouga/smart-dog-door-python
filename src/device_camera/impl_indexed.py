@@ -78,7 +78,7 @@ class IndexedDeviceCamera(DeviceCamera):
             frame_rgb = cv2.cvtColor(self._latest_frame, cv2.COLOR_BGR2RGB)
             return [Image.from_np_array(frame_rgb)]
 
-    def events(self) -> Sub[EventCamera]:
+    def events(self) -> PubSub[EventCamera]:
         return self._pub_sub
 
     def is_connected(self) -> bool:

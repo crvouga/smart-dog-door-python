@@ -1,6 +1,6 @@
 import threading
 import time
-from typing import TypeVar, Generic, Type, Union
+from typing import TypeVar, Generic, Type, Union, Optional, Callable
 from src.device_camera.interface import DeviceCamera
 from src.image.image import Image
 from src.library.pub_sub import PubSub, Sub
@@ -16,16 +16,25 @@ class WithRetry(DeviceCamera, Generic[T]):
     _running: bool
     _lock: threading.Lock
     _connected: bool
-    _capture_thread: threading.Thread
-    _retry_interval: float = 5.0  # seconds between retries
+    _capture_thread: Optional[threading.Thread]
+    _retry_interval: float
+    _time_sleep: Callable[[float], None]
 
-    def __init__(self, wrapped: T, logger: Logger):
+    def __init__(
+        self,
+        wrapped: T,
+        logger: Logger,
+        retry_interval: float = 5.0,
+        time_sleep: Callable[[float], None] = time.sleep,
+    ):
         self._logger = logger.getChild("with_retry")
         self._wrapped = wrapped
         self._running = False
         self._lock = threading.Lock()
         self._connected = False
-        self._capture_thread = None  # type: ignore
+        self._capture_thread = None
+        self._retry_interval = retry_interval
+        self._time_sleep = time_sleep
 
     def start(self) -> None:
         self._logger.info("Starting camera with retry...")
@@ -49,7 +58,7 @@ class WithRetry(DeviceCamera, Generic[T]):
             self._capture_thread.join(timeout=5.0)
             if self._capture_thread.is_alive():
                 self._logger.warning("Capture thread did not exit cleanly.")
-            self._capture_thread = None  # type: ignore
+            self._capture_thread = None
 
     def is_connected(self) -> bool:
         with self._lock:
@@ -59,43 +68,37 @@ class WithRetry(DeviceCamera, Generic[T]):
         while self._running:
             try:
                 if not self._wrapped.is_connected():
-                    if self._wrapped._attempt_connection():
+                    if self._attempt_connection():
                         self._logger.info("Successfully connected to camera.")
                         with self._lock:
                             self._connected = True
-                            # Get the events object and publish to it
-                            events_sub = self._wrapped.events()
-                            if isinstance(events_sub, PubSub):
-                                events_sub.publish(EventCameraConnected())
-                            else:
-                                self._logger.error(
-                                    "Events object is not a PubSub instance"
-                                )
+                            self._wrapped.events().publish(EventCameraConnected())
                     else:
                         self._logger.warning(
                             "Failed to connect to camera, will retry..."
                         )
-                        time.sleep(self._retry_interval)
+                        self._time_sleep(self._retry_interval)
                         continue
 
-                # Check if _process_frames method exists on the wrapped object
-                if hasattr(self._wrapped, "_process_frames"):
-                    self._wrapped._process_frames()
-                else:
-                    self._logger.warning(
-                        "Wrapped camera does not have _process_frames method"
-                    )
-                    time.sleep(self._retry_interval)
+                # Process frames directly instead of delegating to wrapped camera
+                try:
+                    frames = self._wrapped.capture()
+                    if not frames:
+                        self._handle_connection_failure()
+                except Exception as e:
+                    self._logger.error(f"Error processing frames: {e}")
+                    self._handle_connection_failure()
+                    self._time_sleep(self._retry_interval)
 
             except Exception as e:
                 self._logger.error(f"Error in capture loop: {e}")
-                self._wrapped._handle_connection_failure()
-                time.sleep(self._retry_interval)
+                self._handle_connection_failure()
+                self._time_sleep(self._retry_interval)
 
     def capture(self) -> list[Image]:
         return self._wrapped.capture()
 
-    def events(self) -> Sub[EventCamera]:
+    def events(self) -> PubSub[EventCamera]:
         return self._wrapped.events()
 
     def _attempt_connection(self) -> bool:
@@ -105,10 +108,3 @@ class WithRetry(DeviceCamera, Generic[T]):
         with self._lock:
             self._connected = False
         self._wrapped._handle_connection_failure()
-
-    def _process_frames(self) -> None:
-        # Check if _process_frames method exists on the wrapped object
-        if hasattr(self._wrapped, "_process_frames"):
-            self._wrapped._process_frames()
-        else:
-            self._logger.warning("Wrapped camera does not have _process_frames method")

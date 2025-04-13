@@ -1,5 +1,5 @@
 from logging import Logger
-from typing import List, Optional
+from typing import List, Optional, Callable
 import threading
 import time
 from datetime import timedelta
@@ -34,6 +34,9 @@ class FakeDeviceCamera(DeviceCamera):
     _connected: bool
     _lock: threading.Lock
     _image_cycle: cycle
+    _should_fail_connection: bool
+    _should_fail_frames: bool
+    _frame_generator: Optional[Callable[[], Image]]
 
     def __init__(
         self,
@@ -41,6 +44,9 @@ class FakeDeviceCamera(DeviceCamera):
         latency_capture: timedelta = timedelta(seconds=0.3),
         latency_start: timedelta = timedelta(seconds=0.3),
         latency_stop: timedelta = timedelta(seconds=0.3),
+        should_fail_connection: bool = False,
+        should_fail_frames: bool = False,
+        frame_generator: Optional[Callable[[], Image]] = None,
     ):
         self._latency_capture = latency_capture
         self._latency_start = latency_start
@@ -51,6 +57,9 @@ class FakeDeviceCamera(DeviceCamera):
         self._connected = False
         self._lock = threading.Lock()
         self._image_cycle = cycle(IMAGES)
+        self._should_fail_connection = should_fail_connection
+        self._should_fail_frames = should_fail_frames
+        self._frame_generator = frame_generator
 
     def start(self) -> None:
         self._logger.info("Starting FakeDeviceCamera...")
@@ -67,6 +76,10 @@ class FakeDeviceCamera(DeviceCamera):
             return self._connected
 
     def _attempt_connection(self) -> bool:
+        if self._should_fail_connection:
+            self._logger.warning("Simulating connection failure")
+            return False
+
         with self._lock:
             self._connected = True
             self._pub_sub.publish(EventCameraConnected())
@@ -80,10 +93,18 @@ class FakeDeviceCamera(DeviceCamera):
             self._latest_frame = None
 
     def _process_frames(self) -> None:
-        # Create a fake black frame
-        frame = np.zeros((480, 640, 3), dtype=np.uint8)
+        if self._should_fail_frames:
+            self._logger.warning("Simulating frame capture failure")
+            self._handle_connection_failure()
+            return
+
+        if self._frame_generator:
+            frame = self._frame_generator()
+        else:
+            frame = next(self._image_cycle)
+
         with self._lock:
-            self._latest_frame = Image.from_np_array(frame)
+            self._latest_frame = frame
 
     def capture(self) -> List[Image]:
         with self._lock:
@@ -91,5 +112,5 @@ class FakeDeviceCamera(DeviceCamera):
                 return []
             return [self._latest_frame]
 
-    def events(self) -> Sub[EventCamera]:
+    def events(self) -> PubSub[EventCamera]:
         return self._pub_sub

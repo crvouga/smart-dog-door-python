@@ -122,5 +122,5 @@ class RtspDeviceCamera(DeviceCamera):
         else:
             return []
 
-    def events(self) -> Sub[EventCamera]:
+    def events(self) -> PubSub[EventCamera]:
         return self._pub_sub
