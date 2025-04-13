@@ -1,14 +1,11 @@
 from logging import Logger
-from typing import List, Optional, Callable
+from typing import Iterable, Iterator, List, Optional, Union
 import threading
-import time
 from datetime import timedelta
 from itertools import cycle
-import numpy as np
-
 from src.assets import assets_dir
 from src.image.image import Image
-from src.library.pub_sub import PubSub, Sub
+from src.library.pub_sub import PubSub
 from .interface import DeviceCamera
 from .event import EventCamera, EventCameraConnected, EventCameraDisconnected
 
@@ -33,10 +30,9 @@ class FakeDeviceCamera(DeviceCamera):
     _latest_frame: Optional[Image]
     _connected: bool
     _lock: threading.Lock
-    _image_cycle: cycle
     _should_fail_connection: bool
     _should_fail_frames: bool
-    _frame_generator: Optional[Callable[[], Image]]
+    _frame_generator: Iterator[Image]
 
     def __init__(
         self,
@@ -46,7 +42,7 @@ class FakeDeviceCamera(DeviceCamera):
         latency_stop: timedelta = timedelta(seconds=0.3),
         should_fail_connection: bool = False,
         should_fail_frames: bool = False,
-        frame_generator: Optional[Callable[[], Image]] = None,
+        frame_generator: Optional[Iterable[Image]] = None,
     ):
         self._latency_capture = latency_capture
         self._latency_start = latency_start
@@ -56,10 +52,11 @@ class FakeDeviceCamera(DeviceCamera):
         self._latest_frame = None
         self._connected = False
         self._lock = threading.Lock()
-        self._image_cycle = cycle(IMAGES)
         self._should_fail_connection = should_fail_connection
         self._should_fail_frames = should_fail_frames
-        self._frame_generator = frame_generator
+        self._frame_generator = (
+            iter(frame_generator) if frame_generator is not None else cycle(IMAGES)
+        )
 
     def start(self) -> None:
         self._logger.info("Starting FakeDeviceCamera...")
@@ -98,15 +95,13 @@ class FakeDeviceCamera(DeviceCamera):
             self._handle_connection_failure()
             return
 
-        if self._frame_generator:
-            frame = self._frame_generator()
-        else:
-            frame = next(self._image_cycle)
+        frame = next(self._frame_generator)
 
         with self._lock:
             self._latest_frame = frame
 
     def capture(self) -> List[Image]:
+        self._process_frames()
         with self._lock:
             if self._latest_frame is None:
                 return []

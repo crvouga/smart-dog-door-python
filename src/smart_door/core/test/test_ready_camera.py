@@ -68,9 +68,11 @@ def test_transition_to_classifying_state_after_capturing_image() -> None:
     assert isinstance(model, ModelReady)
     assert model.camera.state == CameraState.Capturing
 
-    model, effects = f.transition(
-        model=model, msg=MsgImageCaptureDone(images=f.device_camera.capture())
-    )
+    images = f.device_camera.capture()
+
+    assert len(images) > 0
+
+    model, effects = f.transition(model=model, msg=MsgImageCaptureDone(images=images))
 
     assert len(effects) == 1
     assert isinstance(effects[0], EffectClassifyImages)
@@ -106,3 +108,28 @@ def test_transition_to_idle_state_after_classifying_image() -> None:
 
     assert isinstance(model, ModelReady)
     assert model.camera.state == CameraState.Idle
+
+
+def test_transition_to_idle_state_when_capture_has_no_images() -> None:
+    f = BaseFixture()
+
+    model, _ = f.init()
+
+    model, _ = f.transition_to_ready_state(model=model)
+
+    model, _ = f.transition(
+        model=model,
+        msg=MsgTick(
+            happened_at=datetime.now() + model.config.minimal_rate_camera_process
+        ),
+    )
+
+    assert isinstance(model, ModelReady)
+    assert model.camera.state == CameraState.Capturing
+
+    # Transition with empty images list
+    model, effects = f.transition(model=model, msg=MsgImageCaptureDone(images=[]))
+
+    assert isinstance(model, ModelReady)
+    assert model.camera.state == CameraState.Idle
+    assert len(effects) == 0

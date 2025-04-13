@@ -28,7 +28,19 @@ class Image:
             self._array = np.zeros((1, 1, 3), dtype=np.uint8)
 
     @classmethod
+    def _validate_np_array(cls, data: np.ndarray) -> None:
+        if data is None:
+            raise ValueError("Input array cannot be None")
+        if not isinstance(data, np.ndarray):
+            raise TypeError(f"Expected numpy array, got {type(data).__name__}")
+        if data.ndim < 2 or data.ndim > 3:
+            raise ValueError(f"Expected 2D or 3D array, got {data.ndim}D")
+        if data.ndim == 3 and data.shape[2] not in (1, 3, 4):
+            raise ValueError(f"Expected 1, 3, or 4 channels, got {data.shape[2]}")
+
+    @classmethod
     def from_np_array(cls, data: np.ndarray) -> "Image":
+        cls._validate_np_array(data)
         image = cls()
         image._array = data
         return image

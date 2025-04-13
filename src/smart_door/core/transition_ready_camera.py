@@ -75,6 +75,14 @@ def _transition_camera_capturing_to_classifying(
     if camera.state != CameraState.Capturing:
         return camera, []
 
+    if not msg.images:
+        camera_new = ModelCamera(
+            state=CameraState.Idle,
+            state_start_time=msg.happened_at,
+            latest_classification=camera.latest_classification,
+        )
+        return camera_new, []
+
     camera_new = ModelCamera(
         state=CameraState.Classifying,
         state_start_time=msg.happened_at,
