@@ -20,6 +20,10 @@ class KasaDeviceDoor(DeviceDoor, LifeCycle):
     _retry_interval: float = 5.0  # seconds between retries
     _is_running: bool = False
     _connection_thread: Optional[threading.Thread] = None
+    _polling_thread: Optional[threading.Thread] = None
+    _polling_interval: float = 10.0  # seconds between polling
+    _max_retries: int = 3
+    _retry_delay: float = 1.0  # seconds between operation retries
 
     def __init__(self, logger: logging.Logger, ip_address: str) -> None:
         self._logger = logger.getChild("kasa_device_door")
@@ -27,6 +31,7 @@ class KasaDeviceDoor(DeviceDoor, LifeCycle):
         self._plug = None
         self._is_on = False
         self._pub_sub = PubSub[EventDoor]()
+        self._logger.info(f"Initialized KasaDeviceDoor with IP: {ip_address}")
 
     def start(self) -> None:
         self._logger.info("Starting Kasa device door")
@@ -34,93 +39,192 @@ class KasaDeviceDoor(DeviceDoor, LifeCycle):
         self._connection_thread = threading.Thread(target=self._start_connection_loop)
         self._connection_thread.daemon = True
         self._connection_thread.start()
+        self._logger.debug("Connection thread started")
 
     def _start_connection_loop(self) -> None:
+        self._logger.debug("Entering connection loop")
         while self._is_running:
             try:
+                self._logger.debug(
+                    f"Attempting to connect to Kasa device at {self._ip_address}"
+                )
                 asyncio.run(self._async_start())
                 self._logger.info(
                     f"Kasa device door started, initial state: {'on' if self._is_on else 'off'}"
                 )
                 self._pub_sub.publish(EventDoorConnected())
+                self._logger.debug("Published EventDoorConnected")
+                # Start polling thread after successful connection
+                self._start_polling()
                 return  # Successfully connected, exit the loop
             except Exception as e:
                 self._logger.error(f"Failed to start Kasa device door: {e}")
                 self._logger.info(f"Retrying in {self._retry_interval} seconds...")
                 time.sleep(self._retry_interval)
 
+    def _start_polling(self) -> None:
+        self._logger.debug("Starting polling mechanism")
+        if self._polling_thread is None or not self._polling_thread.is_alive():
+            self._polling_thread = threading.Thread(target=self._polling_loop)
+            self._polling_thread.daemon = True
+            self._polling_thread.start()
+            self._logger.info(
+                f"Started state polling every {self._polling_interval} seconds"
+            )
+
+    def _polling_loop(self) -> None:
+        self._logger.debug("Entering polling loop")
+        while self._is_running and self._plug is not None:
+            try:
+                # Poll the current state
+                self._logger.debug("Polling current device state")
+                previous_state = self._is_on
+                current_state = asyncio.run(self._async_is_open())
+                self._logger.debug(
+                    f"Poll result: device is {'open' if current_state else 'closed'}"
+                )
+
+                # If state changed, log it
+                if previous_state != current_state:
+                    self._logger.info(
+                        f"Door state changed: {'open' if current_state else 'closed'}"
+                    )
+
+                time.sleep(self._polling_interval)
+            except Exception as e:
+                self._logger.error(f"Error during state polling: {e}")
+                self._logger.debug(
+                    f"Will retry polling in {self._retry_interval} seconds"
+                )
+                time.sleep(self._retry_interval)
+
     async def _async_start(self) -> None:
+        self._logger.debug(f"Discovering Kasa device at {self._ip_address}")
         self._plug = await kasa.discover.Discover.discover_single(host=self._ip_address)
         if self._plug is not None:
+            self._logger.debug(f"Device discovered: {self._plug}")
             await self._plug.update()  # Get the latest state
             self._is_on = self._plug.is_on
+            self._logger.debug(
+                f"Initial device state: {'on' if self._is_on else 'off'}"
+            )
+        else:
+            self._logger.warning(f"No device found at {self._ip_address}")
 
     def stop(self) -> None:
         self._logger.info("Stopping Kasa device door")
         self._is_running = False
         if self._connection_thread and self._connection_thread.is_alive():
+            self._logger.debug("Waiting for connection thread to terminate")
             self._connection_thread.join(timeout=1.0)
+        if self._polling_thread and self._polling_thread.is_alive():
+            self._logger.debug("Waiting for polling thread to terminate")
+            self._polling_thread.join(timeout=1.0)
+        self._logger.debug("Publishing EventDoorDisconnected")
         self._pub_sub.publish(EventDoorDisconnected())
         self._plug = None
+        self._logger.debug("Kasa device door stopped")
 
     def open(self) -> None:
+        self._logger.debug("Attempting to open door")
         if not self._plug:
             self._logger.error("Kasa device door not started")
             return
 
-        try:
-            asyncio.run(self._async_open())
-            self._logger.info("Kasa device door opened")
-        except Exception as e:
-            self._logger.error(f"Failed to open Kasa device door: {e}")
-            # Don't raise, just log the error
+        for attempt in range(self._max_retries):
+            try:
+                self._logger.debug(f"Open attempt {attempt+1}/{self._max_retries}")
+                asyncio.run(self._async_open())
+                self._logger.info("Kasa device door opened")
+                return
+            except Exception as e:
+                self._logger.error(
+                    f"Failed to open Kasa device door (attempt {attempt+1}/{self._max_retries}): {e}"
+                )
+                if attempt < self._max_retries - 1:
+                    self._logger.debug(f"Retrying open in {self._retry_delay} seconds")
+                    time.sleep(self._retry_delay)
+                # Don't raise, just log the error
 
     async def _async_open(self) -> None:
         if self._plug is not None:
             try:
+                self._logger.debug("Sending turn_on command to device")
                 await self._plug.turn_on()
                 self._is_on = True
+                self._logger.debug("Device turned on successfully")
             except Exception as e:
                 self._logger.error(f"Communication error on open: {e}")
                 raise
 
     def close(self) -> None:
+        self._logger.debug("Attempting to close door")
         if not self._plug:
             self._logger.error("Kasa device door not started")
             return
 
-        try:
-            asyncio.run(self._async_close())
-            self._logger.info("Kasa device door closed")
-        except Exception as e:
-            self._logger.error(f"Failed to close Kasa device door: {e}")
-            # Don't raise, just log the error
+        for attempt in range(self._max_retries):
+            try:
+                self._logger.debug(f"Close attempt {attempt+1}/{self._max_retries}")
+                asyncio.run(self._async_close())
+                self._logger.info("Kasa device door closed")
+                return
+            except Exception as e:
+                self._logger.error(
+                    f"Failed to close Kasa device door (attempt {attempt+1}/{self._max_retries}): {e}"
+                )
+                if attempt < self._max_retries - 1:
+                    self._logger.debug(f"Retrying close in {self._retry_delay} seconds")
+                    time.sleep(self._retry_delay)
+                # Don't raise, just log the error
 
     async def _async_close(self) -> None:
         if self._plug is not None:
             try:
+                self._logger.debug("Sending turn_off command to device")
                 await self._plug.turn_off()
                 self._is_on = False
+                self._logger.debug("Device turned off successfully")
             except Exception as e:
                 self._logger.error(f"Communication error on close: {e}")
                 raise
 
     def is_open(self) -> bool:
+        self._logger.debug("Checking if door is open")
         if not self._plug:
             self._logger.error("Kasa device door not started")
             return False
 
-        try:
-            return asyncio.run(self._async_is_open())
-        except Exception as e:
-            self._logger.error(f"Failed to get Kasa device door state: {e}")
-            return False
+        for attempt in range(self._max_retries):
+            try:
+                self._logger.debug(
+                    f"Status check attempt {attempt+1}/{self._max_retries}"
+                )
+                result = asyncio.run(self._async_is_open())
+                self._logger.debug(f"Door is {'open' if result else 'closed'}")
+                return result
+            except Exception as e:
+                self._logger.error(
+                    f"Failed to get Kasa device door state (attempt {attempt+1}/{self._max_retries}): {e}"
+                )
+                if attempt < self._max_retries - 1:
+                    self._logger.debug(
+                        f"Retrying status check in {self._retry_delay} seconds"
+                    )
+                    time.sleep(self._retry_delay)
+
+        self._logger.warning("All status check attempts failed, defaulting to closed")
+        return False  # Return false after all retries failed
 
     async def _async_is_open(self) -> bool:
         if self._plug is not None:
             try:
+                self._logger.debug("Updating device state")
                 await self._plug.update()  # Get the latest state
                 self._is_on = self._plug.is_on
+                self._logger.debug(
+                    f"Updated device state: {'on' if self._is_on else 'off'}"
+                )
             except Exception as e:
                 self._logger.error(f"Communication error on status check: {e}")
                 raise

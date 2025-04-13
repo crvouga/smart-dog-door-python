@@ -62,22 +62,36 @@ class WithFallbacks(DeviceCamera):
             self._current_device.stop()
 
     def capture(self) -> list[Image]:
-        try:
-            self._logger.debug("Attempting to capture frames")
-            if not self.is_connected():
-                self._logger.warning("Device not connected, attempting connection")
-                if not self._attempt_connection():
-                    return []
+        """Capture frames from the current device with connection handling."""
+        self._logger.debug("Attempting to capture frames")
 
+        if not self._ensure_device_connected():
+            return []
+
+        return self._try_capture_frames()
+
+    def _ensure_device_connected(self) -> bool:
+        """Ensure device is connected, attempt connection if needed."""
+        if self.is_connected():
+            return True
+
+        self._logger.warning("Device not connected, attempting connection")
+        return self._attempt_connection()
+
+    def _try_capture_frames(self) -> list[Image]:
+        """Try to capture frames and handle any failures."""
+        try:
             frames = self._current_device.capture()
+
             if not frames:
                 self._logger.warning("Device returned empty frame list")
-                # Just return empty frames instead of trying next device
+                self._handle_connection_failure()
                 return []
 
             # Reset retry count on successful capture
             self._current_retry_count = 0
             return frames
+
         except Exception as e:
             self._logger.error(f"Error capturing frames: {e}", exc_info=True)
             self._handle_connection_failure()
@@ -131,34 +145,47 @@ class WithFallbacks(DeviceCamera):
             f"Starting device rotation from {start_device.__class__.__name__}"
         )
         self._current_retry_count = 0
+
         while True:
-            self._log_device_info("Trying to connect to")
-            if self._try_connect_current_device():
-                self._log_device_info("Successfully connected to", level="info")
-                self._current_retry_count = 0
+            if self._try_connect_with_retries():
                 return True
 
-            self._current_retry_count += 1
-            if self._current_retry_count < self._max_retry_attempts:
-                self._logger.info(
-                    f"Retry attempt {self._current_retry_count}/{self._max_retry_attempts} for current device"
-                )
-                self._logger.info(
-                    f"Sleeping for {self._retry_interval} seconds before retry"
-                )
-                self._time_sleep(self._retry_interval)
-                continue
-
-            # Reset retry count and move to next device
+            # Move to next device after max retries
             self._current_retry_count = 0
             self._switch_to_next_device()
 
+            # Check if we've tried all devices
             if self._current_device == start_device:
-                self._logger.error(
-                    "Tried all devices with maximum retries, none could connect"
-                )
-                self._connected = False
-                return False
+                return self._handle_all_devices_failed()
+
+    def _try_connect_with_retries(self) -> bool:
+        self._log_device_info("Trying to connect to")
+
+        # Try to connect to current device
+        if self._try_connect_current_device():
+            self._log_device_info("Successfully connected to", level="info")
+            self._current_retry_count = 0
+            return True
+
+        # Handle retry logic
+        self._current_retry_count += 1
+        if self._current_retry_count < self._max_retry_attempts:
+            self._log_retry_attempt()
+            return False
+
+        return False
+
+    def _log_retry_attempt(self) -> None:
+        self._logger.info(
+            f"Retry attempt {self._current_retry_count}/{self._max_retry_attempts} for current device"
+        )
+        self._logger.info(f"Sleeping for {self._retry_interval} seconds before retry")
+        self._time_sleep(self._retry_interval)
+
+    def _handle_all_devices_failed(self) -> bool:
+        self._logger.error("Tried all devices with maximum retries, none could connect")
+        self._connected = False
+        return False
 
     def _try_connect_current_device(self) -> bool:
         self._log_device_info(
