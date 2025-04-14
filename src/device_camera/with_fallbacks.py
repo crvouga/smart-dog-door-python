@@ -6,7 +6,8 @@ from logging import Logger
 from itertools import cycle
 import threading
 import time
-from typing import Iterator, Callable
+from typing import Iterator, Callable, Optional
+from datetime import timedelta
 
 
 class WithFallbacks(DeviceCamera):
@@ -18,17 +19,18 @@ class WithFallbacks(DeviceCamera):
     _events: PubSub[EventCamera]
     _max_retry_attempts: int
     _current_retry_count: int
-    _retry_interval: float
+    _retry_interval: timedelta
     _time_sleep: Callable[[float], None]
 
     def __init__(
         self,
-        devices: list[DeviceCamera],
+        devices: list[Optional[DeviceCamera]],
         logger: Logger,
         max_retry_attempts: int = 3,
-        retry_interval: float = 5.0,
+        retry_interval: timedelta = timedelta(seconds=1.0),
         time_sleep: Callable[[float], None] = time.sleep,
     ):
+        devices = [d for d in devices if d is not None]
         if not devices:
             raise ValueError("At least one device must be provided")
 
@@ -60,6 +62,7 @@ class WithFallbacks(DeviceCamera):
         with self._lock:
             self._connected = False
             self._current_device.stop()
+        self._logger.info("WithFallbacks camera stopped")
 
     def capture(self) -> list[Image]:
         """Capture frames from the current device with connection handling."""
@@ -179,8 +182,10 @@ class WithFallbacks(DeviceCamera):
         self._logger.info(
             f"Retry attempt {self._current_retry_count}/{self._max_retry_attempts} for current device"
         )
-        self._logger.info(f"Sleeping for {self._retry_interval} seconds before retry")
-        self._time_sleep(self._retry_interval)
+        self._logger.info(
+            f"Sleeping for {self._retry_interval.total_seconds()} seconds before retry"
+        )
+        self._time_sleep(self._retry_interval.total_seconds())
 
     def _handle_all_devices_failed(self) -> bool:
         self._logger.error("Tried all devices with maximum retries, none could connect")
@@ -217,9 +222,9 @@ class WithFallbacks(DeviceCamera):
                 )
                 self._current_device._handle_connection_failure()
                 self._logger.info(
-                    f"Sleeping for {self._retry_interval} seconds before retry"
+                    f"Sleeping for {self._retry_interval.total_seconds()} seconds before retry"
                 )
-                self._time_sleep(self._retry_interval)
+                self._time_sleep(self._retry_interval.total_seconds())
                 return
 
             # Reset retry count and move to next device

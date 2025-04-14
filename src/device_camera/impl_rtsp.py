@@ -25,8 +25,9 @@ class RtspDeviceCamera(DeviceCamera):
     _lock: threading.Lock
     _frame_polling_thread: Optional[threading.Thread]
     _stop_polling: threading.Event
+    _connection_timeout: float
 
-    def __init__(self, logger: Logger, rtsp_url: str):
+    def __init__(self, logger: Logger, rtsp_url: str, connection_timeout: float = 5.0):
         """
         Initializes the RtspDeviceCamera.
 
@@ -34,6 +35,7 @@ class RtspDeviceCamera(DeviceCamera):
             logger: Logger instance.
             rtsp_url: The full RTSP URL for the camera stream
                       (e.g., "rtsp://user:pass@192.168.1.100/live").
+            connection_timeout: Maximum time in seconds to wait for connection.
         """
         if not rtsp_url:
             raise ValueError("RTSP URL cannot be empty.")
@@ -47,6 +49,7 @@ class RtspDeviceCamera(DeviceCamera):
         self._lock = threading.Lock()
         self._frame_polling_thread = None
         self._stop_polling = threading.Event()
+        self._connection_timeout = connection_timeout
         self._logger.info(f"Initialized for RTSP URL: {rtsp_url}")
 
     def start(self) -> None:
@@ -116,15 +119,33 @@ class RtspDeviceCamera(DeviceCamera):
             if self._cap is not None and self._connected:
                 return True
 
-            self._logger.info(f"Attempting to connect to RTSP stream: {self._rtsp_url}")
-            cap = cv2.VideoCapture(self._rtsp_url)
+            self._logger.info(
+                f"Attempting to connect to RTSP stream: {self._rtsp_url} (timeout: {self._connection_timeout}s)"
+            )
 
+            # Set OpenCV connection timeout parameters
+            cv2.setUseOptimized(True)
+            cap = cv2.VideoCapture(self._rtsp_url, cv2.CAP_FFMPEG)
+
+            # Set timeout properties
+            cap.set(cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, self._connection_timeout * 1000)
+            cap.set(cv2.CAP_PROP_READ_TIMEOUT_MSEC, self._connection_timeout * 1000)
+
+            # Start time to track timeout
+            start_time = time.time()
+
+            # Try to open the connection with timeout
             if not cap.isOpened():
-                self._logger.warning("Failed to open stream immediately, will retry...")
+                elapsed_time = time.time() - start_time
+                self._logger.warning(
+                    f"Failed to open stream after {elapsed_time:.2f}s, timeout was {self._connection_timeout}s"
+                )
                 cap.release()
                 return False
 
-            self._logger.info("RTSP stream opened successfully.")
+            self._logger.info(
+                f"RTSP stream opened successfully in {time.time() - start_time:.2f}s"
+            )
             self._cap = cap
             self._connected = True
             return True

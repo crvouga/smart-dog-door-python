@@ -1,3 +1,4 @@
+from datetime import timedelta
 import logging
 from typing import Optional
 from src.device_camera.interface import DeviceCamera
@@ -18,28 +19,15 @@ class DeviceCameraFactory:
 
     def create_from_env(self, env: Env) -> DeviceCamera:
         """Factory method to create the appropriate camera based on environment configuration."""
-        devices: list[DeviceCamera] = []
-
-        wyze_rtsp = self._create_wyze_rtsp(env=env)
-
-        if wyze_rtsp:
-            self._logger.info("Using Wyze rtsp device camera")
-            devices.append(wyze_rtsp)
-
-        indexed = self.create_indexed()
-
-        if indexed:
-            self._logger.info("Using indexed device camera")
-            devices.append(indexed)
-
-        wyze_sdk = self._create_wyze_sdk(env=env)
-
-        if wyze_sdk:
-            self._logger.info("Using Wyze SDK device camera")
-            devices.append(wyze_sdk)
 
         device_camera = WithFallbacks(
-            devices=devices,
+            devices=[
+                self.create_wyze_rtsp(env=env),
+                self.create_indexed(),
+                self.create_wyze_sdk(env=env),
+            ],
+            max_retry_attempts=1,
+            retry_interval=timedelta(seconds=1.0),
             logger=self._logger,
         )
 
@@ -49,7 +37,7 @@ class DeviceCameraFactory:
         """Create a camera using device index (e.g., webcam)."""
         return IndexedDeviceCamera(logger=self._logger, device_ids=[0])
 
-    def _create_wyze_rtsp(self, env: Env) -> Optional[DeviceCamera]:
+    def create_wyze_rtsp(self, env: Env) -> Optional[DeviceCamera]:
         """Create a Wyze camera using RTSP protocol."""
         self._logger.info("Initializing Wyze rtsp device camera")
 
@@ -69,7 +57,7 @@ class DeviceCameraFactory:
         )
         return wyze_device_camera
 
-    def _create_wyze_sdk(self, env: Env) -> Optional[WyzeSdkCamera]:
+    def create_wyze_sdk(self, env: Env) -> Optional[WyzeSdkCamera]:
         """Create a Wyze camera using the official SDK."""
         wyze_client = self._init_wyze_client(env=env)
         wyze_device = self._get_wyze_device(wyze_client=wyze_client)

@@ -55,8 +55,8 @@ class DesktopClient(LifeCycle):
 
     def start(self) -> None:
         self._logger.info("Starting")
-        self._device_camera.start()
         self._device_door.start()
+        self._device_camera.start()
         self._smart_door.start()
         self._gui.start()
         self._logger.info("Started")
@@ -64,7 +64,7 @@ class DesktopClient(LifeCycle):
     def stop(self) -> None:
         self._logger.info("Stopping")
         self._gui.stop()
-        self._smart_door.stop()
         self._device_camera.stop()
+        self._smart_door.stop()
         self._device_door.stop()
         self._logger.info("Stopped")
