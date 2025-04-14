@@ -53,7 +53,15 @@ class Gui(LifeCycle):
 
     def _signal_handler(self, sig, frame):
         """Custom signal handler to quit the application gracefully."""
-        self._logger.info("SIGINT received, quitting application.")
+        self._logger.info("SIGINT received, initiating graceful shutdown.")
+        # Stop all components in reverse order of initialization
+        self._window.close()
+        self._debug_window.close()
+        self._smart_door.stop()
+        self._device_camera.stop()
+        # Give components a moment to clean up
+        self._app.processEvents()
+        # Now quit the application
         self._app.quit()
 
     def start(self) -> None:
