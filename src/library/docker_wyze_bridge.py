@@ -7,6 +7,7 @@ from .host_ip import get_host_ip
 from typing import Optional
 
 # Web UI: http://localhost:5000/
+# http://0.0.0.0:5001/
 
 
 @dataclass
