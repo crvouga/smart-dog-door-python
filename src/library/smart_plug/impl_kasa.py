@@ -32,6 +32,7 @@ class KasaSmartPlug(SmartPlug, LifeCycle):
     _max_retries: int = 3
     _retry_delay: timedelta = timedelta(seconds=1.0)
     _event_loop: Optional[asyncio.AbstractEventLoop] = None
+    _connection_event: threading.Event = threading.Event()
 
     def __init__(self, logger: logging.Logger, ip_address: str) -> None:
         self._logger = logger.getChild("kasa_smart_plug")
@@ -39,6 +40,7 @@ class KasaSmartPlug(SmartPlug, LifeCycle):
         self._plug = None
         self._state = SmartPlugState.UNKNOWN
         self._pub_sub = PubSub[SmartPlugEvent]()
+        self._connection_event.clear()
         self._logger.info(f"Initialized KasaSmartPlug with IP: {ip_address}")
 
     def start(self) -> None:
@@ -69,6 +71,7 @@ class KasaSmartPlug(SmartPlug, LifeCycle):
                 )
                 self._pub_sub.publish(SmartPlugConnectedEvent())
                 self._logger.debug("Published SmartPlugConnectedEvent")
+                self._connection_event.set()  # Signal that connection is established
                 self._start_polling()
                 return
             except Exception as e:
@@ -176,6 +179,7 @@ class KasaSmartPlug(SmartPlug, LifeCycle):
     def stop(self) -> None:
         self._logger.info("Stopping Kasa smart plug")
         self._is_running = False
+        self._connection_event.clear()
 
         # Turn off the plug when stopping
         if self._plug is not None:
@@ -190,8 +194,9 @@ class KasaSmartPlug(SmartPlug, LifeCycle):
             except Exception as e:
                 self._logger.error(f"Failed to turn off plug during shutdown: {e}")
 
-        self._join_thread(self._connection_thread)
         self._join_thread(self._polling_thread)
+        self._join_thread(self._connection_thread)
+
         self._logger.debug("Publishing SmartPlugDisconnectedEvent")
         self._pub_sub.publish(SmartPlugDisconnectedEvent())
         self._plug = None
@@ -201,20 +206,49 @@ class KasaSmartPlug(SmartPlug, LifeCycle):
     async def _turn_off_plug(self) -> None:
         """Turn off the plug during shutdown."""
         if self._plug is not None:
-            await self._plug.update()
-            if self._plug.is_on:
-                await self._plug.turn_off()
-                self._state = SmartPlugState.OFF
+            try:
+                await self._plug.update()
+                if self._plug.is_on:
+                    await self._plug.turn_off()
+                    self._state = SmartPlugState.OFF
+            except Exception as e:
+                self._logger.error(f"Error turning off plug: {e}")
+                # Don't re-raise to avoid breaking the shutdown process
 
     def _join_thread(self, thread: Optional[threading.Thread]) -> None:
         if thread and thread.is_alive():
             self._logger.debug(f"Waiting for thread to terminate")
-            thread.join(timeout=1.0)
+            try:
+                thread.join(timeout=1.0)
+                if thread.is_alive():
+                    self._logger.warning("Thread did not terminate within timeout")
+            except Exception as e:
+                self._logger.error(f"Error joining thread: {e}")
 
     def turn_on(self) -> bool:
+        # Wait for the device to be connected before attempting to turn it on
+        if not self._connection_event.is_set():
+            self._logger.info("Waiting for device to connect before turning on...")
+            # Wait with a timeout to avoid hanging indefinitely
+            connected = self._connection_event.wait(timeout=30.0)
+            if not connected:
+                self._logger.error("Timed out waiting for device connection")
+                return False
+            self._logger.info("Device connected, proceeding with turn on operation")
+
         return self._execute_plug_operation("turn_on", self._async_turn_on)
 
     def turn_off(self) -> bool:
+        # Wait for the device to be connected before attempting to turn it off
+        if not self._connection_event.is_set():
+            self._logger.info("Waiting for device to connect before turning off...")
+            # Wait with a timeout to avoid hanging indefinitely
+            connected = self._connection_event.wait(timeout=30.0)
+            if not connected:
+                self._logger.error("Timed out waiting for device connection")
+                return False
+            self._logger.info("Device connected, proceeding with turn off operation")
+
         return self._execute_plug_operation("turn_off", self._async_turn_off)
 
     def _execute_plug_operation(self, operation: str, async_func) -> bool:

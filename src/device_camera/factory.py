@@ -22,9 +22,9 @@ class DeviceCameraFactory:
 
         device_camera = WithFallbacks(
             devices=[
-                self.create_wyze_rtsp(env=env),
                 self.create_indexed(),
-                self.create_wyze_sdk(env=env),
+                self.create_wyze_rtsp(env=env),
+                # self.create_wyze_sdk(env=env),
             ],
             max_retry_attempts=1,
             retry_interval=timedelta(seconds=1.0),
