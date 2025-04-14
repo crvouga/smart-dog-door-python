@@ -50,12 +50,13 @@ def interpret_effect(
 
     if isinstance(effect, EffectClassifyImages):
         classifications = deps.image_classifier.classify(images=effect.images)
+        finished_at = datetime.now()
         msg_queue.put(
             MsgImageClassifyDone(
                 classification_run=ClassificationRun(
                     classifications=classifications,
                     images=effect.images,
-                    finished_at=datetime.now(),
+                    finished_at=finished_at,
                 )
             )
         )

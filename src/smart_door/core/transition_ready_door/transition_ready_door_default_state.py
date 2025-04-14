@@ -3,6 +3,7 @@ from ..model import (
     DoorState,
     ModelDoor,
     ModelReady,
+    to_latest_classifications,
 )
 from ..msg import (
     Msg,
@@ -20,7 +21,9 @@ def transition_ready_door_default_state(
     if door.state != DoorState.Opened:
         return door, effects_new
 
-    if len(model.camera.classification_runs) != 0:
+    classifications = to_latest_classifications(model=model)
+
+    if len(classifications) != 0:
         return door, effects_new
 
     door_new = replace(

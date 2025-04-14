@@ -32,7 +32,7 @@ def transition_ready_camera(
     effects_new.extend(effects)
 
     camera_new, effects = _transition_camera_classifying_to_idle(
-        camera=camera_new, msg=msg
+        model=model, camera=camera_new, msg=msg
     )
     effects_new.extend(effects)
 
@@ -93,7 +93,7 @@ def _transition_camera_capturing_to_classifying(
 
 
 def _transition_camera_classifying_to_idle(
-    camera: ModelCamera, msg: Msg
+    model: ModelReady, camera: ModelCamera, msg: Msg
 ) -> tuple[ModelCamera, list[Effect]]:
     if not isinstance(msg, MsgImageClassifyDone):
         return camera, []
@@ -101,8 +101,13 @@ def _transition_camera_classifying_to_idle(
     if camera.state != CameraState.Classifying:
         return camera, []
 
-    classification_runs_new = list(camera.classification_runs)
-    classification_runs_new.append(msg.classification_run)
+    classification_runs_new = [
+        msg.classification_run,
+        *list(camera.classification_runs),
+    ]
+    classification_runs_new = classification_runs_new[
+        : model.config.max_classification_runs
+    ]
 
     camera_new = ModelCamera(
         state=CameraState.Idle,
