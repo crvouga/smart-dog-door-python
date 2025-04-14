@@ -1,6 +1,12 @@
 from typing import Optional
 from src.device_door.interface import DeviceDoor
-from src.device_door.event import EventDoor, EventDoorConnected, EventDoorDisconnected
+from src.device_door.event import (
+    EventDoor,
+    EventDoorConnected,
+    EventDoorDisconnected,
+    EventDoorOpened,
+    EventDoorClosed,
+)
 from src.library.pub_sub import PubSub, Sub
 import logging
 import time
@@ -77,6 +83,7 @@ class SmartPlugMagnetDeviceDoor(DeviceDoor):
             self._logger.error("Failed to open door - could not turn smart plug off")
             raise RuntimeError("Failed to open door")
         self._logger.info("Door opened successfully")
+        self._pub_sub.publish(EventDoorOpened())
 
     def close(self) -> None:
         """Close the door by turning the smart plug ON."""
@@ -85,6 +92,7 @@ class SmartPlugMagnetDeviceDoor(DeviceDoor):
             self._logger.error("Failed to close door - could not turn smart plug on")
             raise RuntimeError("Failed to close door")
         self._logger.info("Door closed successfully")
+        self._pub_sub.publish(EventDoorClosed())
 
     def events(self) -> Sub[EventDoor]:
         """Get the event subscriber for this door."""
@@ -124,11 +132,11 @@ class SmartPlugMagnetDeviceDoor(DeviceDoor):
             # Update internal state based on the smart plug state
             if event.state == SmartPlugState.ON:
                 self._logger.debug("Door is now CLOSED due to smart plug state change")
+                self._pub_sub.publish(EventDoorClosed())
             elif event.state == SmartPlugState.OFF:
                 self._logger.debug("Door is now OPEN due to smart plug state change")
+                self._pub_sub.publish(EventDoorOpened())
             elif event.state == SmartPlugState.UNKNOWN:
                 self._logger.warning(
                     "Door state is now UNKNOWN due to smart plug state change"
                 )
-            # No direct door event for state changes, as open/close operations
-            # will trigger their own events

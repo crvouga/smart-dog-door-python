@@ -11,6 +11,9 @@ from ..effect import (
 from .transition_ready_door_open_state import transition_ready_door_open
 from .transition_ready_door_close_state import transition_ready_door_close
 from .transition_ready_door_default_state import transition_ready_door_default_state
+from .transition_ready_door_from_door_events import (
+    transition_ready_door_from_door_events,
+)
 
 
 def transition_ready_door(
@@ -25,6 +28,11 @@ def transition_ready_door(
     effects_new.extend(effects)
 
     door, effects = transition_ready_door_default_state(model=model, door=door, msg=msg)
+    effects_new.extend(effects)
+
+    door, effects = transition_ready_door_from_door_events(
+        model=model, door=door, msg=msg
+    )
     effects_new.extend(effects)
 
     return door, effects_new

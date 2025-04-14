@@ -12,4 +12,16 @@ class EventDoorDisconnected:
     type: Literal["disconnected"] = "disconnected"
 
 
-EventDoor = Union[EventDoorConnected, EventDoorDisconnected]
+@dataclass
+class EventDoorOpened:
+    type: Literal["opened"] = "opened"
+
+
+@dataclass
+class EventDoorClosed:
+    type: Literal["closed"] = "closed"
+
+
+EventDoor = Union[
+    EventDoorConnected, EventDoorDisconnected, EventDoorOpened, EventDoorClosed
+]
