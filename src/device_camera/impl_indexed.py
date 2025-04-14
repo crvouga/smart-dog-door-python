@@ -62,8 +62,27 @@ class IndexedDeviceCamera(DeviceCamera):
         self._logger.debug("Frame processing thread started")
 
     def _frame_processing_loop(self) -> None:
+        consecutive_failures = 0
+        max_failures = (
+            3  # Number of consecutive failures before considering camera disconnected
+        )
+
         while self._running and self._connected:
-            self._process_frames()
+            success = self._process_frames()
+
+            if not success:
+                consecutive_failures += 1
+                self._logger.warning(
+                    f"Frame processing failure: {consecutive_failures}/{max_failures}"
+                )
+
+                if consecutive_failures >= max_failures:
+                    self._logger.error("Camera appears to be disconnected")
+                    self._cleanup_camera()  # This will trigger the disconnected event
+                    break
+            else:
+                consecutive_failures = 0  # Reset counter on successful frame
+
             threading.Event().wait(0.03)  # ~30 FPS
 
     def _cleanup_camera(self) -> None:
@@ -92,6 +111,7 @@ class IndexedDeviceCamera(DeviceCamera):
 
         self._connected = False
         self._publish_event(EventCameraDisconnected())
+        self._logger.info("Camera disconnection event published")
 
     def capture(self) -> List[Image]:
         with self._lock:
@@ -152,6 +172,9 @@ class IndexedDeviceCamera(DeviceCamera):
             if self._connected:
                 self._connected = False
                 self._publish_event(EventCameraDisconnected())
+                self._logger.info(
+                    "Camera disconnection event published due to connection failure"
+                )
             self._latest_frame = None
 
     def _publish_event(self, event: EventCamera) -> None:
@@ -163,19 +186,19 @@ class IndexedDeviceCamera(DeviceCamera):
     def _get_next_device_id(self) -> int:
         return next(self._device_id_cycle)
 
-    def _process_frames(self) -> None:
+    def _process_frames(self) -> bool:
         with self._lock:
             if not self._cap:
-                return
+                return False
 
             try:
                 ret, frame = self._cap.read()
                 if not ret or frame is None:
                     self._logger.warning("Failed to read frame from camera")
-                    self._handle_connection_failure()
-                    return
+                    return False
 
                 self._latest_frame = frame
+                return True
             except Exception as e:
                 self._logger.error(f"Error reading frame: {e}")
-                self._handle_connection_failure()
+                return False
