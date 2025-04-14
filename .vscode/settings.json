@@ -43,6 +43,7 @@
     "pyparsing",
     "pytest",
     "pytz",
+    "Retriable",
     "Rstp",
     "RTMP",
     "RTSP",

@@ -5,6 +5,18 @@ from src.library.pub_sub import PubSub
 from .event import EventCamera
 
 
+class RecoverableConnectionError(Exception):
+    """Exception raised when a connection attempt fails or when the connection is lost."""
+
+    pass
+
+
+class UnrecoverableConnectionError(Exception):
+    """Exception raised when a connection attempt fails or when the connection is lost."""
+
+    pass
+
+
 class DeviceCamera(LifeCycle, ABC):
     @abstractmethod
     def capture(self) -> list[Image]:
