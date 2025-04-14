@@ -124,3 +124,77 @@ class DockerWyzeBridge:
         except Exception as e:
             self._logger.error(f"Error powering on camera {self.camera_name}: {str(e)}")
             return False
+
+    @property
+    def stream_enable_url(self) -> str:
+        """
+        Returns the URL to enable the Wyze camera stream.
+
+        This endpoint is used to enable the camera stream via the Docker Wyze Bridge API.
+        """
+        return f"http://{self.host_ip}:5001/api/{self.camera_name}/state/enable"
+
+    @property
+    def stream_disable_url(self) -> str:
+        """
+        Returns the URL to disable the Wyze camera stream.
+
+        This endpoint is used to disable the camera stream via the Docker Wyze Bridge API.
+        """
+        return f"http://{self.host_ip}:5001/api/{self.camera_name}/state/disable"
+
+    def stream_enable(self) -> bool:
+        """
+        Sends a request to enable the Wyze camera stream.
+
+        Returns:
+            bool: True if the request was successful, False otherwise.
+        """
+
+        try:
+            url = f"{self.stream_enable_url}?api={self.api_key}"
+            self._logger.info(f"Sending enable stream request to {url}")
+            response = requests.get(url, timeout=10)
+            if response.status_code == 200:
+                self._logger.info(
+                    f"Successfully enabled stream for camera {self.camera_name}"
+                )
+                return True
+            else:
+                self._logger.warning(
+                    f"Failed to enable stream for camera {self.camera_name}: HTTP {response.status_code}"
+                )
+                return False
+        except Exception as e:
+            self._logger.error(
+                f"Error enabling stream for camera {self.camera_name}: {str(e)}"
+            )
+            return False
+
+    def stream_disable(self) -> bool:
+        """
+        Sends a request to disable the Wyze camera stream.
+
+        Returns:
+            bool: True if the request was successful, False otherwise.
+        """
+
+        try:
+            url = f"{self.stream_disable_url}?api={self.api_key}"
+            self._logger.info(f"Sending disable stream request to {url}")
+            response = requests.get(url, timeout=10)
+            if response.status_code == 200:
+                self._logger.info(
+                    f"Successfully disabled stream for camera {self.camera_name}"
+                )
+                return True
+            else:
+                self._logger.warning(
+                    f"Failed to disable stream for camera {self.camera_name}: HTTP {response.status_code}"
+                )
+                return False
+        except Exception as e:
+            self._logger.error(
+                f"Error disabling stream for camera {self.camera_name}: {str(e)}"
+            )
+            return False

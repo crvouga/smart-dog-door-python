@@ -62,6 +62,11 @@ class WyzeRtspDeviceCamera(DeviceCamera):
             self._logger.info("Successfully powered on the camera")
             time.sleep(1)
             self._logger.debug("Waited 1 second for camera initialization")
+            if self._wyze_bridge.stream_enable():
+                self._logger.info("Successfully enabled the camera stream")
+            else:
+                self._logger.warning("Failed to enable the camera stream")
+
         else:
             self._logger.warning("Failed to power on the camera")
         self._rtsp_camera.start()
