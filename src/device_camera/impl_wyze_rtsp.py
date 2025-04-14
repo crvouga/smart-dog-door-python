@@ -1,4 +1,5 @@
 import logging
+import time
 from src.image.image import Image
 from src.library.pub_sub import PubSub
 from .event import EventCamera
@@ -42,6 +43,7 @@ class WyzeRtspDeviceCamera(DeviceCamera):
             camera_name=wyze_device.name,
             host_ip=host_ip,
             api_key=api_key,
+            logger=self._logger,
         )
 
         # Create the underlying RTSP camera
@@ -55,12 +57,24 @@ class WyzeRtspDeviceCamera(DeviceCamera):
     def start(self) -> None:
         """Start the camera."""
         self._logger.info("Starting WyzeRtspDeviceCamera...")
+        # Power on the camera before starting
+        if self._wyze_bridge.power_on():
+            self._logger.info("Successfully powered on the camera")
+            time.sleep(1)
+            self._logger.debug("Waited 1 second for camera initialization")
+        else:
+            self._logger.warning("Failed to power on the camera")
         self._rtsp_camera.start()
 
     def stop(self) -> None:
         """Stop the camera."""
         self._logger.info("Stopping WyzeRtspDeviceCamera...")
         self._rtsp_camera.stop()
+        # Power off the camera after stopping
+        if self._wyze_bridge.power_off():
+            self._logger.info("Successfully powered off the camera")
+        else:
+            self._logger.warning("Failed to power off the camera")
 
     def capture(self) -> list[Image]:
         """Capture the latest frame(s) from the camera."""

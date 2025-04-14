@@ -79,8 +79,16 @@ class RtspDeviceCamera(DeviceCamera):
         self._logger.info("Stopping RtspDeviceCamera...")
         self._stop_polling.set()
 
+        # Set a timeout for the thread join to prevent hanging
         if self._frame_polling_thread and self._frame_polling_thread.is_alive():
-            self._frame_polling_thread.join(timeout=1.0)
+            try:
+                self._frame_polling_thread.join(timeout=1.0)
+                if self._frame_polling_thread.is_alive():
+                    self._logger.warning(
+                        "Frame polling thread did not terminate within timeout"
+                    )
+            except Exception as e:
+                self._logger.error(f"Error joining frame polling thread: {e}")
 
         with self._lock:
             if self._cap:
@@ -88,13 +96,16 @@ class RtspDeviceCamera(DeviceCamera):
                     self._cap.release()
                 except Exception as e:
                     self._logger.error(f"Error releasing capture: {e}")
-                self._cap = None
+                finally:
+                    self._cap = None
 
             if self._connected:
                 self._connected = False
                 self._pub_sub.publish(EventCameraDisconnected())
 
             self._latest_frame = None
+
+        self._logger.info("RtspDeviceCamera stopped")
 
     def is_connected(self) -> bool:
         with self._lock:
