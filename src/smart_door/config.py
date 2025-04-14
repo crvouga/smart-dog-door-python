@@ -3,13 +3,10 @@ from datetime import timedelta
 from src.image_classifier.classification_config import ClassificationConfig
 
 
-FPS = 60
-
-
 @dataclass
 class Config:
-    tick_rate: timedelta = timedelta(seconds=1 / FPS)
-    minimal_rate_camera_process: timedelta = timedelta(seconds=1 / FPS)
+    tick_rate: timedelta = timedelta(seconds=1 / 2)
+    minimal_rate_camera_process: timedelta = timedelta(seconds=1 / 5)
     minimal_duration_will_open: timedelta = timedelta(seconds=3)
     minimal_duration_will_close: timedelta = timedelta(seconds=3)
     classification_close_list: list[ClassificationConfig] = field(
