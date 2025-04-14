@@ -60,7 +60,7 @@ def _transition_camera_idle_to_capturing(
         ModelCamera(
             state=CameraState.Capturing,
             state_start_time=msg.happened_at,
-            latest_classification=camera.latest_classification,
+            classification_runs=camera.classification_runs,
         ),
         [EffectCaptureImage()],
     )
@@ -79,14 +79,14 @@ def _transition_camera_capturing_to_classifying(
         camera_new = ModelCamera(
             state=CameraState.Idle,
             state_start_time=msg.happened_at,
-            latest_classification=camera.latest_classification,
+            classification_runs=camera.classification_runs,
         )
         return camera_new, []
 
     camera_new = ModelCamera(
         state=CameraState.Classifying,
         state_start_time=msg.happened_at,
-        latest_classification=camera.latest_classification,
+        classification_runs=camera.classification_runs,
     )
 
     return camera_new, [EffectClassifyImages(images=msg.images)]
@@ -101,10 +101,13 @@ def _transition_camera_classifying_to_idle(
     if camera.state != CameraState.Classifying:
         return camera, []
 
+    classification_runs_new = list(camera.classification_runs)
+    classification_runs_new.append(msg.classification_run)
+
     camera_new = ModelCamera(
         state=CameraState.Idle,
         state_start_time=msg.happened_at,
-        latest_classification=msg.classifications,
+        classification_runs=classification_runs_new,
     )
 
     return camera_new, []

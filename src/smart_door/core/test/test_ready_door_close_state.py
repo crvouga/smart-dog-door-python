@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from dataclasses import replace
 from src.image_classifier.classification import Classification
 from src.smart_door.core.effect import EffectCloseDoor
-from src.smart_door.core.model import DoorState, ModelReady
+from src.smart_door.core.model import ClassificationRun, DoorState, ModelReady
 from src.smart_door.core.msg import MsgTick
 from src.smart_door.core.test.fixture import BaseFixture
 
@@ -23,7 +23,16 @@ class Fixture(BaseFixture):
         self.model = replace(
             model,
             door=replace(model.door, state=door_state, state_start_time=datetime.now()),
-            camera=replace(model.camera, latest_classification=classifications),
+            camera=replace(
+                model.camera,
+                classification_runs=[
+                    ClassificationRun(
+                        classifications=classifications,
+                        images=[],
+                        finished_at=datetime.now(),
+                    ),
+                ],
+            ),
         )
 
 

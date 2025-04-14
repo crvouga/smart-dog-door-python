@@ -57,8 +57,14 @@ def _transition_from_will_open_to_opened(
 def _transition_to_will_open(
     model: ModelReady, door: ModelDoor, msg: Msg
 ) -> tuple[ModelDoor, list[Effect]]:
+    classifications: list[Classification] = [
+        classification
+        for classification_run in model.camera.classification_runs
+        for classification in classification_run.classifications
+    ]
+
     should_open = _does_have_open_list_objects(
-        classifications=model.camera.latest_classification,
+        classifications=classifications,
         open_list=model.config.classification_open_list,
     )
 

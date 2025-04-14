@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from dataclasses import replace
 from src.image_classifier.classification import Classification
 from src.smart_door.core.effect import EffectOpenDoor
-from src.smart_door.core.model import DoorState, Model, ModelReady
+from src.smart_door.core.model import ClassificationRun, DoorState, Model, ModelReady
 from src.smart_door.core.msg import MsgImageClassifyDone, MsgTick, MsgImageCaptureDone
 from src.smart_door.core.test.fixture import BaseFixture
 
@@ -23,7 +23,16 @@ class Fixture(BaseFixture):
         self.model = replace(
             model,
             door=replace(model.door, state=door_state, state_start_time=datetime.now()),
-            camera=replace(model.camera, latest_classification=classifications),
+            camera=replace(
+                model.camera,
+                classification_runs=[
+                    ClassificationRun(
+                        classifications=classifications,
+                        images=[],
+                        finished_at=datetime.now(),
+                    ),
+                ],
+            ),
         )
 
 
@@ -63,7 +72,17 @@ def test_bail_on_will_open_if_no_object_is_detected() -> None:
     assert model.door.state == DoorState.WillOpen
 
     model, _ = f.transition(
-        model=replace(model, camera=replace(model.camera, latest_classification=[])),
+        model=replace(
+            model,
+            camera=replace(
+                model.camera,
+                classification_runs=[
+                    ClassificationRun(
+                        classifications=[], images=[], finished_at=datetime.now()
+                    )
+                ],
+            ),
+        ),
         msg=MsgTick(happened_at=datetime.now()),
     )
 
@@ -74,7 +93,15 @@ def test_bail_on_will_open_if_no_object_is_detected() -> None:
 def test_bail_on_will_close_if_open_object_is_detected() -> None:
     f = Fixture(door_state=DoorState.WillClose)
     model: Model = replace(
-        f.model, camera=replace(f.model.camera, latest_classification=[])
+        f.model,
+        camera=replace(
+            f.model.camera,
+            classification_runs=[
+                ClassificationRun(
+                    classifications=[], images=[], finished_at=datetime.now()
+                ),
+            ],
+        ),
     )
     model, _ = f.transition(
         model=model,
@@ -88,8 +115,14 @@ def test_bail_on_will_close_if_open_object_is_detected() -> None:
             model,
             camera=replace(
                 model.camera,
-                latest_classification=[
-                    Classification(label="dog", weight=0.5),
+                classification_runs=[
+                    ClassificationRun(
+                        classifications=[
+                            Classification(label="dog", weight=0.5),
+                        ],
+                        images=[],
+                        finished_at=datetime.now(),
+                    ),
                 ],
             ),
         ),

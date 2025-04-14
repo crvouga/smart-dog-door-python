@@ -7,6 +7,7 @@ from src.smart_door.core import (
     MsgImageCaptureDone,
     MsgImageClassifyDone,
 )
+from src.smart_door.core.model import ClassificationRun
 from src.smart_door.core.msg import MsgTick
 from src.smart_door.core.test.fixture import BaseFixture
 
@@ -102,7 +103,11 @@ def test_transition_to_idle_state_after_classifying_image() -> None:
     model, _ = f.transition(
         model=model,
         msg=MsgImageClassifyDone(
-            classifications=f.image_classifier.classify(images=images)
+            classification_run=ClassificationRun(
+                classifications=f.image_classifier.classify(images=images),
+                images=images,
+                finished_at=datetime.now(),
+            )
         ),
     )
 

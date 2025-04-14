@@ -30,13 +30,15 @@ class WithFallbacks(DeviceCamera):
         retry_interval: timedelta = timedelta(seconds=1.0),
         time_sleep: Callable[[float], None] = time.sleep,
     ):
-        devices = [d for d in devices if d is not None]
-        if not devices:
+        devices_cleaned: list[DeviceCamera] = [d for d in devices if d is not None]
+        if not devices_cleaned:
             raise ValueError("At least one device must be provided")
 
         self._logger = logger.getChild("with_fallbacks")
-        self._logger.info(f"Initializing WithFallbacks with {len(devices)} devices")
-        self._devices = cycle(devices)
+        self._logger.info(
+            f"Initializing WithFallbacks with {len(devices_cleaned)} devices"
+        )
+        self._devices = cycle(devices_cleaned)
         self._current_device = next(self._devices)
         self._log_device_info("Initial device selected")
         self._lock = threading.Lock()

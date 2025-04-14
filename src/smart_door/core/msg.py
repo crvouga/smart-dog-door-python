@@ -5,6 +5,7 @@ from src.image_classifier.classification import Classification
 from src.image.image import Image
 from src.device_camera.event import EventCamera
 from src.device_door.event import EventDoor
+from src.smart_door.core.model import ClassificationRun
 
 
 @dataclass
@@ -47,7 +48,7 @@ class MsgImageCaptureDone(_MsgBase):
 
 @dataclass
 class MsgImageClassifyDone(_MsgBase):
-    classifications: list[Classification] = field(default_factory=list)
+    classification_run: ClassificationRun = field(default_factory=ClassificationRun)
     type: Literal["image_classify_done"] = "image_classify_done"
 
 

@@ -42,7 +42,7 @@ def transition_connecting(
             camera=ModelCamera(
                 state=CameraState.Idle,
                 state_start_time=datetime.now(),
-                latest_classification=[],
+                classification_runs=[],
             ),
             door=ModelDoor(
                 state=DoorState.Closed,

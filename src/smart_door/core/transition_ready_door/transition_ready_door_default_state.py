@@ -20,7 +20,7 @@ def transition_ready_door_default_state(
     if door.state != DoorState.Opened:
         return door, effects_new
 
-    if len(model.camera.latest_classification) != 0:
+    if len(model.camera.classification_runs) != 0:
         return door, effects_new
 
     door_new = replace(

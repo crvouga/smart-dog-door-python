@@ -5,6 +5,7 @@ from ..model import (
     DoorState,
     ModelDoor,
     ModelReady,
+    to_latest_classifications,
 )
 from ..msg import (
     Msg,
@@ -36,7 +37,7 @@ def _transition_to_will_close(
     model: ModelReady, door: ModelDoor, msg: Msg
 ) -> tuple[ModelDoor, list[Effect]]:
     should_close = _does_have_close_list_objects(
-        classifications=model.camera.latest_classification,
+        classifications=to_latest_classifications(model=model),
         close_list=model.config.classification_close_list,
     )
 

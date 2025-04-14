@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from typing import Literal, Union
 from enum import Enum, auto
 from datetime import datetime
+from src.image.image import Image
 from src.image_classifier.classification import Classification
 from src.smart_door.config import Config
 
@@ -37,10 +38,17 @@ class CameraState(Enum):
 
 
 @dataclass
+class ClassificationRun:
+    classifications: list[Classification] = field(default_factory=list)
+    images: list[Image] = field(default_factory=list)
+    finished_at: datetime = field(default_factory=datetime.now)
+
+
+@dataclass
 class ModelCamera:
     state: CameraState = field(default=CameraState.Idle)
     state_start_time: datetime = field(default_factory=datetime.now)
-    latest_classification: list[Classification] = field(default_factory=list)
+    classification_runs: list[ClassificationRun] = field(default_factory=list)
 
 
 class DoorState(Enum):
@@ -77,5 +85,10 @@ def is_camera_connected(model: Model) -> bool:
 
 def to_latest_classifications(model: Model) -> list[Classification]:
     if isinstance(model, ModelReady):
-        return model.camera.latest_classification
+        classifications: list[Classification] = [
+            classification
+            for classification_run in model.camera.classification_runs
+            for classification in classification_run.classifications
+        ]
+        return classifications
     return []

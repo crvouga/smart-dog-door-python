@@ -1,5 +1,6 @@
+from datetime import datetime
 from src.device_camera.event import EventCamera
-from src.smart_door.core.model import Model
+from src.smart_door.core.model import ClassificationRun, Model
 from .core import (
     Effect,
     Msg,
@@ -49,7 +50,15 @@ def interpret_effect(
 
     if isinstance(effect, EffectClassifyImages):
         classifications = deps.image_classifier.classify(images=effect.images)
-        msg_queue.put(MsgImageClassifyDone(classifications=classifications))
+        msg_queue.put(
+            MsgImageClassifyDone(
+                classification_run=ClassificationRun(
+                    classifications=classifications,
+                    images=effect.images,
+                    finished_at=datetime.now(),
+                )
+            )
+        )
 
     if isinstance(effect, EffectOpenDoor):
         deps.device_door.open()
