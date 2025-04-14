@@ -174,5 +174,5 @@ class RtspDeviceCamera(DeviceCamera):
                 self._logger.error(f"Error creating image from frame: {e}")
                 return []
 
-    def events(self) -> Sub[EventCamera]:
+    def events(self) -> PubSub[EventCamera]:
         return self._pub_sub
