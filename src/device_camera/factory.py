@@ -19,17 +19,17 @@ class DeviceCameraFactory:
         """Factory method to create the appropriate camera based on environment configuration."""
         devices: list[DeviceCamera] = []
 
-        indexed = self.create_indexed()
-
-        if indexed:
-            self._logger.info("Using indexed device camera")
-            devices.append(indexed)
-
         wyze_rtsp = self._create_wyze_rtsp(env=env)
 
         if wyze_rtsp:
             self._logger.info("Using Wyze rtsp device camera")
             devices.append(wyze_rtsp)
+
+        indexed = self.create_indexed()
+
+        if indexed:
+            self._logger.info("Using indexed device camera")
+            devices.append(indexed)
 
         wyze_sdk = self._create_wyze_sdk(env=env)
 
