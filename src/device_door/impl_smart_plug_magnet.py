@@ -65,14 +65,6 @@ class SmartPlugMagnetDeviceDoor(DeviceDoor):
         """Stop the smart plug magnet door device."""
         self._logger.info("Stopping smart plug magnet door")
         self._is_running = False
-
-        # Close the door before stopping
-        try:
-            self.close()
-        except Exception as e:
-            self._logger.error(f"Error closing door during shutdown: {e}")
-
-        # Stop the smart plug
         self._smart_plug.stop()
         self._logger.info("Smart plug magnet door stopped")
 
