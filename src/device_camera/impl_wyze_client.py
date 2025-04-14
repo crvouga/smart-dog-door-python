@@ -2,7 +2,7 @@ from src.image.image import Image
 from src.library.pub_sub import PubSub, Sub
 from .event import EventCamera, EventCameraConnected, EventCameraDisconnected
 from .interface import DeviceCamera
-from src.library.wyze_sdk.wyze_client import WyzeClient
+from src.library.wyze_sdk.wyze_client import WyzeClient, WyzeDevice
 import threading
 import time
 from logging import Logger
@@ -12,8 +12,7 @@ from typing import Optional, Union
 class WyzeSdkCamera(DeviceCamera):
     _logger: Logger
     _wyze_client: WyzeClient
-    _device_mac: str
-    _device_model: str
+    _wyze_device: WyzeDevice
     _pub_sub: PubSub[EventCamera]
     _capture_thread: Optional[threading.Thread]
     _running: bool
@@ -24,13 +23,11 @@ class WyzeSdkCamera(DeviceCamera):
     def __init__(
         self,
         logger: Logger,
-        device_mac: str,
-        device_model: str,
         wyze_client: WyzeClient,
+        wyze_device: WyzeDevice,
     ):
         self._logger = logger.getChild("wyze_device_camera")
-        self._device_mac = device_mac
-        self._device_model = device_model
+        self._wyze_device = wyze_device
         self._wyze_client = wyze_client
         self._pub_sub = PubSub[EventCamera]()
         self._capture_thread = None
@@ -44,7 +41,7 @@ class WyzeSdkCamera(DeviceCamera):
 
     def _log_details(self) -> None:
         self._logger.info("Details for camera...")
-        response = self._wyze_client.get_device_info(device_mac=self._device_mac)
+        response = self._wyze_client.get_device_info(device_mac=self._wyze_device.mac)
         self._logger.info(f"Response: {response}")
 
     def _log_list_cameras(self) -> None:
@@ -88,8 +85,8 @@ class WyzeSdkCamera(DeviceCamera):
     def _attempt_connection(self) -> bool:
         try:
             response = self._wyze_client.wyze_sdk_client.cameras.turn_on(
-                device_mac=self._device_mac,
-                device_model=self._device_model,
+                device_mac=self._wyze_device.mac,
+                device_model=self._wyze_device.model,
             )
             if response and response.data:
                 with self._lock:
@@ -111,8 +108,8 @@ class WyzeSdkCamera(DeviceCamera):
     def _process_frames(self) -> None:
         try:
             response = self._wyze_client.wyze_sdk_client.cameras.turn_on(
-                device_mac=self._device_mac,
-                device_model=self._device_model,
+                device_mac=self._wyze_device.mac,
+                device_model=self._wyze_device.model,
             )
 
             if response and response.data:

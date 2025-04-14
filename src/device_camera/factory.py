@@ -4,6 +4,7 @@ from src.device_camera.interface import DeviceCamera
 from src.device_camera.impl_rtsp import RtspDeviceCamera
 from src.device_camera.impl_indexed import IndexedDeviceCamera
 from src.device_camera.impl_wyze_client import WyzeSdkCamera
+from src.device_camera.impl_wyze_rtsp import WyzeRtspDeviceCamera
 from src.device_camera.with_retry import WithRetry
 from src.device_camera.with_fallbacks import WithFallbacks
 from src.library.wyze_sdk.wyze_client import WyzeClient, WyzeDevice
@@ -59,14 +60,12 @@ class DeviceCameraFactory:
         if not wyze_device:
             return None
 
-        wyze_bridge = DockerWyzeBridge(
-            camera_name=wyze_device.name,
+        wyze_device_camera = WyzeRtspDeviceCamera(
+            logger=self._logger,
+            wyze_client=wyze_client,
+            wyze_device=wyze_device,
             host_ip=env.wyze_bridge_host_ip,
             api_key=env.wyze_bridge_api_key,
-        )
-
-        wyze_device_camera = RtspDeviceCamera(
-            logger=self._logger, rtsp_url=wyze_bridge.rtsp_url
         )
         return wyze_device_camera
 
@@ -81,8 +80,7 @@ class DeviceCameraFactory:
         wyze_device_camera = WyzeSdkCamera(
             wyze_client=wyze_client,
             logger=self._logger,
-            device_mac=wyze_device.mac,
-            device_model=wyze_device.model,
+            wyze_device=wyze_device,
         )
         return wyze_device_camera
 
