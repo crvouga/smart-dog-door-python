@@ -38,17 +38,17 @@ def test_transition_to_opened_state_when_door_opened_event_received() -> None:
     assert model.door.state_start_time == happened_at
 
 
-# def test_transition_to_closed_state_when_door_closed_event_received() -> None:
-#     f = Fixture(door_state=DoorState.Opened, classifications=[])
-#     happened_at = datetime.now()
-#     model, _ = f.transition(
-#         model=f.model,
-#         msg=MsgDoorEvent(happened_at=happened_at, door_event=EventDoorClosed()),
-#     )
+def test_transition_to_closed_state_when_door_closed_event_received() -> None:
+    f = Fixture(door_state=DoorState.Opened, classifications=[])
+    happened_at = datetime.now()
+    model, _ = f.transition(
+        model=f.model,
+        msg=MsgDoorEvent(happened_at=happened_at, door_event=EventDoorClosed()),
+    )
 
-#     assert isinstance(model, ModelReady)
-#     assert model.door.state == DoorState.Closed
-#     assert model.door.state_start_time == happened_at
+    assert isinstance(model, ModelReady)
+    assert model.door.state == DoorState.Closed
+    assert model.door.state_start_time == happened_at
 
 
 # def test_door_opened_event_cancels_will_close_state() -> None:
