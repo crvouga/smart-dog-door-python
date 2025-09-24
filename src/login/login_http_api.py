@@ -2,11 +2,12 @@ import json
 from fastapi import APIRouter, Request
 import logging
 import uuid
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse
 from datetime import datetime
 from src.shared.html_root import view_html_root
 from src.shared.send_email.send_email_interface import SendEmail
 from src.library.sql_db import SqlDb
+from src.shared.result_page import ResultPage
 
 
 class LoginHttpApi:
@@ -49,9 +50,9 @@ class LoginHttpApi:
                 form_data = await request.form()
                 email_address = form_data["email_address"]
                 if not isinstance(email_address, str):
-                    return RedirectResponse(
-                        url=f"/app/login/err?email_address={email_address}&err='Invalid email address'",
-                        status_code=303,
+                    return ResultPage.redirect(
+                        title="Invalid email address",
+                        body="Invalid email address",
                     )
                 self._logger.info(f"Login requested for {email_address}")
                 login_link = {
@@ -64,66 +65,35 @@ class LoginHttpApi:
                 self._send_email.send_email(
                     email_address=email_address,
                     subject="Smart Dog Door Login",
-                    body=f"<p>Click here to login: <a href='/app/clicked-login-link?token={login_link['login-link/token']}'>Login</a></p>",
+                    body=f"<p>Click here to login: <a href='/app/login/clicked-login-link?token={login_link['login-link/token']}'>Login</a></p>",
                 )
                 self._logger.info(f"Login sent to {email_address}")
                 self._login_link_db.add(login_link)
 
-                return RedirectResponse(
-                    url=f"/app/login/ok?email_address={email_address}",
-                    status_code=303,
+                return ResultPage.redirect(
+                    title="Sent login link",
+                    body="Check your email for a login link",
                 )
             except Exception as e:
                 self._logger.error(f"Error sending login: {e}")
-                return RedirectResponse(
-                    url=f"/app/login/err?email_address={email_address}&err='{e}'",
-                    status_code=303,
+                return ResultPage.redirect(
+                    title="Failed to send login link",
+                    body="Failed to send login link",
                 )
 
-        @self.router.get("/app/clicked-login-link")
+        @self.router.get("/app/login/clicked-login-link")
         async def clicked_login_link(request: Request):
-            self._logger.info("Clicked login")
+            self._logger.info("Clicked login link")
             login_link_token = request.query_params["token"]
             login_link = self._login_link_db.find_by_token(login_link_token)
             if login_link is None:
-                return RedirectResponse(
-                    url=f"/app/login/err?token={login_link_token}&err='Login link not found'",
-                    status_code=303,
+                return ResultPage.redirect(
+                    title="Login link not found",
+                    body="Login link not found",
                 )
-            return RedirectResponse(
-                url=f"/app/login/ok?token={login_link['login-link/token']}",
-                status_code=303,
-            )
-
-        @self.router.get("/app/login/ok", response_class=HTMLResponse)
-        async def login_ok(request: Request):
-            self._logger.info("Login successful")
-            email_address = request.query_params["token"]
-            login_link_token = request.query_params["token"]
-            return view_html_root(
-                title="Smart Dog Door Login",
-                children=f"""
-                <main class="container">
-                    <h1>Smart Dog Door Login</h1>
-                    <p>Login successful for {email_address}</p>  
-                </main>
-                """,
-            )
-
-        @self.router.get("/app/login/err", response_class=HTMLResponse)
-        async def login_err(request: Request):
-            self._logger.info("Login failed")
-            email_address = request.query_params["email_address"]
-            error = request.query_params["error"]
-            return view_html_root(
-                title="Smart Dog Door Login",
-                children=f"""
-                <main class="container">
-                    <h1>Smart Dog Door Login</h1>
-                    <p>Login failed for {email_address}</p>
-                    <p>Error: {error}</p>
-                </main>
-                """,
+            return ResultPage.redirect(
+                title="Login link clicked",
+                body="Login link clicked",
             )
 
 
