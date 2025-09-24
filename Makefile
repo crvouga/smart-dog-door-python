@@ -13,12 +13,15 @@ start:
 	python3 main.py
 
 dev:
-	watchmedo auto-restart --patterns="*.py" --ignore-patterns="*.pyc,__pycache__/*" --recursive  --debounce-interval=1.0 -- python3 ./main.py
+	watchmedo auto-restart --patterns="*.py" --ignore-patterns="*.pyc,__pycache__/*" --recursive  --debounce-interval=1.0 -- python3 main.py
 
 # Run tests
 test:
 	clear
 	python3 -m pytest
+
+freeze:
+	python3 -m pip freeze > requirements.txt
 
 # Run type checking
 tc:

@@ -5,7 +5,7 @@ from src.env import Env
 from src.library.life_cycle import LifeCycle
 
 
-class App(LifeCycle):
+class AppDesktop(LifeCycle):
     _logger: logging.Logger
     _client: LifeCycle
 

@@ -1,5 +1,6 @@
-from src.app import App
+from src.app_http_api import AppHttpApi
+
 
 if __name__ == "__main__":
-    app = App()
+    app = AppHttpApi()
     app.start()
