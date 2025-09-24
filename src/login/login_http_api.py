@@ -3,7 +3,7 @@ from fastapi import APIRouter, Request
 import logging
 import uuid
 from fastapi.responses import HTMLResponse
-from datetime import datetime
+from datetime import datetime, timedelta
 from src.shared.html_root import view_html_root
 from src.shared.send_email.send_email_interface import SendEmail
 from src.library.sql_db import SqlDb
@@ -21,7 +21,7 @@ class LoginHttpApi:
         self._login_link_db = LoginLinkDb(sql_db=self._sql_db)
         self.router = APIRouter()
 
-        @self.router.get("/app/login")
+        @self.router.get("login_link__send_login_link")
         async def send_login_link_page():
             self._logger.info("Login requested")
             return HTMLResponse(
@@ -31,10 +31,10 @@ class LoginHttpApi:
                     <main class="container">
                         <h1>Smart Dog Door Login</h1>
                         <p>Enter your email to receive a login link.</p>
-                        <form method="POST" action="/app/login/send-login-link">
-                            <label for="email_address">
+                        <form method="POST" action="/login_link__send_login_link">
+                            <label for="login_link__email_address">
                                 Email
-                                <input type="text" id="email_address" name="email_address" placeholder="Email" required>
+                                <input type="text" id="login_link__email_address" name="login_link__email_address" placeholder="Email" required>
                             </label>
                             <button type="submit">Send Login Link</button>
                         </form>
@@ -43,12 +43,12 @@ class LoginHttpApi:
                 )
             )
 
-        @self.router.post("/app/login/send-login-link")
+        @self.router.post("/login_link__send_login_link")
         async def send_login_link(request: Request):
             try:
                 self._logger.info("Login requested")
                 form_data = await request.form()
-                email_address = form_data["email_address"]
+                email_address = form_data["login_link__email_address"]
                 if not isinstance(email_address, str):
                     return ResultPage.redirect(
                         title="Invalid email address",
@@ -56,16 +56,16 @@ class LoginHttpApi:
                     )
                 self._logger.info(f"Login requested for {email_address}")
                 login_link = {
-                    "login-link/id": str(uuid.uuid4()),
-                    "login-link/token": str(uuid.uuid4()),
-                    "login-link/email-address": email_address,
-                    "login-link/requested-at-utc-iso": datetime.now().isoformat(),
-                    "login-link/status": "login-link-status/pending",
+                    "login_link__email_address": email_address,
+                    "login_link__id": str(uuid.uuid4()),
+                    "login_link__token": str(uuid.uuid4()),
+                    "login_link__requested_at_utc_iso": datetime.now().isoformat(),
+                    "login_link__status": "login_link_status__pending",
                 }
                 self._send_email.send_email(
                     email_address=email_address,
                     subject="Smart Dog Door Login",
-                    body=f"<p>Click here to login: <a href='/app/login/clicked-login-link?token={login_link['login-link/token']}'>Login</a></p>",
+                    body=f"<p>Click here to login: <a href='login_link__clicked_login_link?token={login_link['login_link__token']}'>Login</a></p>",
                 )
                 self._logger.info(f"Login sent to {email_address}")
                 self._login_link_db.add(login_link)
@@ -81,7 +81,7 @@ class LoginHttpApi:
                     body="Failed to send login link",
                 )
 
-        @self.router.get("/app/login/clicked-login-link")
+        @self.router.get("login_link__clicked_login_link")
         async def clicked_login_link(request: Request):
             self._logger.info("Clicked login link")
             login_link_token = request.query_params["token"]
@@ -91,10 +91,30 @@ class LoginHttpApi:
                     title="Login link not found",
                     body="Login link not found",
                 )
+            if is_expired(login_link):
+                return ResultPage.redirect(
+                    title="Login link expired",
+                    body="Login link expired",
+                )
             return ResultPage.redirect(
                 title="Login link clicked",
                 body="Login link clicked",
             )
+
+
+def to_requested_at_utc_iso(login_link: dict) -> datetime:
+    return datetime.fromisoformat(login_link["login_link__requested_at_utc_iso"])
+
+
+def to_age(login_link: dict) -> timedelta:
+    link_age = datetime.now() - to_requested_at_utc_iso(login_link)
+    return link_age
+
+
+def is_expired(login_link: dict) -> bool:
+    link_age = to_age(login_link)
+    is_expired = link_age > timedelta(minutes=10)
+    return is_expired
 
 
 class LoginLinkDb:
@@ -104,12 +124,12 @@ class LoginLinkDb:
     def add(self, login_link: dict):
         self._sql_db.execute(
             "INSERT INTO entities (id, type, data) VALUES (?, ?, ?)",
-            (login_link["login-link/id"], "login-link", json.dumps(login_link)),
+            (login_link["login_link__id"], "login_link", json.dumps(login_link)),
         )
 
     def find_by_token(self, login_link_token: str):
         queried = self._sql_db.query(
-            "SELECT data FROM entities WHERE type = 'login-link' AND data LIKE '%login-link/token% = ?'",
+            "SELECT data FROM entities WHERE type = 'login_link' AND data LIKE '%login_link__token% = ?'",
             (login_link_token,),
         )
 

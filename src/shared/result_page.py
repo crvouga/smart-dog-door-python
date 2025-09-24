@@ -3,6 +3,7 @@ from fastapi.responses import RedirectResponse
 
 class ResultPage:
     def __init__(self):
+
         pass
 
     @staticmethod
