@@ -1,4 +1,5 @@
 import aiosqlite
+from contextlib import asynccontextmanager
 
 
 class SqlDb:
@@ -18,6 +19,12 @@ class SqlDb:
             "SELECT * FROM users WHERE age > ?",
             (25,)
         )
+
+        # Use transactions for atomic operations
+        async with db.transaction() as conn:
+            await db.execute_in_transaction(conn, "INSERT INTO users (name) VALUES (?)", ("Bob",))
+            await db.execute_in_transaction(conn, "INSERT INTO users (name) VALUES (?)", ("Charlie",))
+            # Both inserts will be committed together, or both rolled back if an error occurs
     """
 
     def __init__(self, db_path: str):
@@ -61,7 +68,7 @@ class SqlDb:
                 await conn.execute(query, params)
                 await conn.commit()
 
-    async def query(self, query: str, params: tuple):
+    async def query(self, query: str, params: tuple = ()):
         """Execute a SQL query that retrieves data.
 
         Args:
@@ -90,6 +97,64 @@ class SqlDb:
                 cursor = await conn.execute(query, params)
                 rows = await cursor.fetchall()
                 return [dict(row) for row in rows]
+
+    @asynccontextmanager
+    async def transaction(self):
+        """Context manager for database transactions.
+
+        Ensures all operations within the transaction are atomic.
+        If an exception occurs, the transaction is rolled back.
+        If no exception occurs, the transaction is committed.
+
+        Example:
+            async with db.transaction() as conn:
+                await db.execute_in_transaction(conn, "INSERT INTO users (name) VALUES (?)", ("Alice",))
+                await db.execute_in_transaction(conn, "INSERT INTO users (name) VALUES (?)", ("Bob",))
+        """
+        if self._is_in_memory:
+            # For in-memory databases, use the existing connection
+            conn = await self._get_connection()
+            try:
+                yield conn
+                await conn.commit()
+            except Exception as e:
+                await conn.rollback()
+                raise e
+        else:
+            # For file databases, create a new connection for the transaction
+            async with aiosqlite.connect(self._db_path) as conn:
+                try:
+                    yield conn
+                    await conn.commit()
+                except Exception as e:
+                    await conn.rollback()
+                    raise e
+
+    async def execute_in_transaction(self, conn, query: str, params: tuple):
+        """Execute a SQL query within a transaction.
+
+        Args:
+            conn: Database connection from transaction context
+            query: SQL query string with ? placeholders
+            params: Tuple of parameter values to insert into query
+        """
+        await conn.execute(query, params)
+
+    async def query_in_transaction(self, conn, query: str, params: tuple):
+        """Execute a SQL query within a transaction that retrieves data.
+
+        Args:
+            conn: Database connection from transaction context
+            query: SQL query string with ? placeholders
+            params: Tuple of parameter values to insert into query
+
+        Returns:
+            List of dictionaries representing database rows
+        """
+        conn.row_factory = aiosqlite.Row
+        cursor = await conn.execute(query, params)
+        rows = await cursor.fetchall()
+        return [dict(row) for row in rows]
 
     async def close(self):
         """Close the database connection."""
