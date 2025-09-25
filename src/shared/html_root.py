@@ -1,5 +1,7 @@
-def view_html_root(children: str, title: str) -> str:
-    return f"""
+class HtmlRoot:
+    @staticmethod
+    def view(title: str, children: str) -> str:
+        return f"""
 <html>
     <head>
         <title>{title}</title>

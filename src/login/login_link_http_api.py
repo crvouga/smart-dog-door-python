@@ -3,7 +3,7 @@ from fastapi import APIRouter, Request
 import logging
 import uuid
 from fastapi.responses import HTMLResponse
-from src.shared.html_root import view_html_root
+from src.shared.html_root import HtmlRoot
 from src.shared.send_email.send_email_interface import SendEmail
 from src.library.sql_db import SqlDb
 from src.shared.result_page.result_page import ResultPage
@@ -28,7 +28,7 @@ class LoginLinkHttpApi:
         async def send_login_link_page():
             self._logger.info("Login requested")
             return HTMLResponse(
-                view_html_root(
+                HtmlRoot.view(
                     title="Smart Dog Door Login",
                     children="""
                     <main class="container">
@@ -56,6 +56,8 @@ class LoginLinkHttpApi:
                     return ResultPage.redirect(
                         title="Invalid email address",
                         body="Invalid email address",
+                        link_label="Back",
+                        link_url="/login_link.send",
                     )
                 self._logger.info(f"Login requested for {email_address}")
                 login_link = {
@@ -79,12 +81,16 @@ class LoginLinkHttpApi:
                 return ResultPage.redirect(
                     title="Sent login link",
                     body="Check your email for a login link",
+                    link_label="Back",
+                    link_url="/login_link.send",
                 )
             except Exception as e:
                 self._logger.error(f"Error sending login: {e}")
                 return ResultPage.redirect(
                     title="Failed to send login link",
                     body="Failed to send login link",
+                    link_label="Back",
+                    link_url="/login_link.send",
                 )
 
         @self.api_router.get("/login_link.clicked_login_link")
@@ -96,13 +102,19 @@ class LoginLinkHttpApi:
                 return ResultPage.redirect(
                     title="Login link not found",
                     body="Login link not found",
+                    link_label="Back",
+                    link_url="/login_link.send",
                 )
             if LoginLink.is_expired(clicked_link):
                 return ResultPage.redirect(
                     title="Login link expired",
                     body="Login link expired",
+                    link_label="Back",
+                    link_url="/login_link.send",
                 )
             return ResultPage.redirect(
                 title="Login link clicked",
                 body="Login link clicked",
+                link_label="Back",
+                link_url="/login_link.send",
             )
