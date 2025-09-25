@@ -1,4 +1,3 @@
-import asyncio
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 import uvicorn
@@ -9,29 +8,27 @@ from src.login.login_link_http_api import LoginLinkHttpApi
 from src.login.login_link_db import LoginLinkDb
 from src.library.sql_db import SqlDb
 from src.shared.send_email.send_email_impl import SendEmailImpl
-from src.shared.send_email.send_email_interface import SendEmail
 from src.shared.result_page.result_page_http_api import ResultPageHttpApi
 from src.shared.http_api import HttpApi
+from src.shared.send_email.email_db import EmailDb
 
 
 class AppHttpApi(LifeCycle):
-    logger: logging.Logger
-    app: FastAPI
-    _server: uvicorn.Server
-    sql_db: SqlDb
-    send_email: SendEmail
-
     def __init__(self) -> None:
         logging.basicConfig(level=logging.INFO)
         self.logger = logging.getLogger("app")
         self.app = FastAPI()
         self.sql_db = SqlDb(db_path="app.db")
-        self.send_email = SendEmailImpl.init(logger=self.logger)
+        self.send_email = SendEmailImpl.init(logger=self.logger, sql_db=self.sql_db)
+        self.login_link_db = LoginLinkDb(sql_db=self.sql_db)
+        self.email_db = EmailDb(sql_db=self.sql_db)
 
         http_apis: list[HttpApi] = [
             HealthCheckHttpApi(logger=self.logger),
             LoginLinkHttpApi(
-                logger=self.logger, sql_db=self.sql_db, send_email=self.send_email
+                logger=self.logger,
+                send_email=self.send_email,
+                login_link_db=self.login_link_db,
             ),
             ResultPageHttpApi(logger=self.logger),
         ]
@@ -48,12 +45,15 @@ class AppHttpApi(LifeCycle):
 
     async def start(self) -> None:
         self.logger.info("Starting server on port 8000")
-        self.logger.info("Initializing database...")
-        login_link_db = LoginLinkDb(sql_db=self.sql_db)
+
+        self.logger.info("Running database migrations...")
         async with self.sql_db.transaction() as tx:
-            for up_sql in login_link_db.up():
-                await tx.execute(up_sql, ())
-        self.logger.info("Database initialized successfully")
+            for s in self.login_link_db.up():
+                await tx.execute(s, ())
+            for s in self.email_db.up():
+                await tx.execute(s, ())
+        self.logger.info("Database migrations completed successfully")
+
         await self._server.serve()
 
     async def stop(self) -> None:

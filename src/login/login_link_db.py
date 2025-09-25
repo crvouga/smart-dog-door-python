@@ -21,6 +21,9 @@ class LoginLinkDb:
             """
             CREATE INDEX IF NOT EXISTS login_links_login_link__token_index ON login_links (login_link__token)
             """,
+            """
+            ALTER TABLE login_links ADD COLUMN login_link__email_id TEXT
+            """,
         ]
 
     async def insert(self, login_link: Dict[str, Any]) -> None:

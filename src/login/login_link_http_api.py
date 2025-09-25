@@ -1,14 +1,11 @@
-import json
-from fastapi import APIRouter, Request
+from fastapi import Request
 import logging
-import uuid
+from src.library.new_id import new_id
 from fastapi.responses import HTMLResponse, RedirectResponse
-from typing import Dict, Any, Union
+from typing import Union
 from src.shared.html_root import HtmlRoot
 from src.shared.send_email.send_email_interface import SendEmail
-from src.library.sql_db import SqlDb
 from src.shared.result_page.result_page_http_api import ResultPageHttpApi
-from src.shared.email import Email
 from src.login.login_link import LoginLink
 from src.login.login_link_db import LoginLinkDb
 from datetime import datetime
@@ -17,11 +14,12 @@ from src.shared.http_api import HttpApi
 
 class LoginLinkHttpApi(HttpApi):
 
-    def __init__(self, logger: logging.Logger, send_email: SendEmail, sql_db: SqlDb):
+    def __init__(
+        self, logger: logging.Logger, send_email: SendEmail, login_link_db: LoginLinkDb
+    ):
         super().__init__(logger=logger)
         self.send_email = send_email
-        self.sql_db = sql_db
-        self.login_link_db = LoginLinkDb(sql_db=self.sql_db)
+        self.login_link_db = login_link_db
 
         @self.api_router.get("/login_link__send")
         async def send_login_link_page() -> HTMLResponse:
@@ -62,21 +60,23 @@ class LoginLinkHttpApi(HttpApi):
                     )
                 self.logger.info(f"Login requested for {email_address}")
                 login_link = {
-                    "login_link__email_address": email_address,
-                    "login_link__id": str(uuid.uuid4()),
-                    "login_link__token": str(uuid.uuid4()),
+                    "login_link__id": new_id("login_link__"),
+                    "login_link__token": new_id("login_link_token__"),
                     "login_link__requested_at_utc_iso": datetime.now().isoformat(),
                     "login_link__status": "login_link_status.pending",
+                    "login_link__email_id": new_id("email_id__"),
                 }
-                email = Email(
-                    to=email_address,
-                    subject="Smart Dog Door Login",
-                    body=f"""
-                    <p>Click here to login: <a href='/login_link__clicked_login_link?token={login_link['login_link__token']}'>Login</a></p>
-                    """,
-                )
+                email = {
+                    "email__id": login_link["login_link__email_id"],
+                    "email__to": email_address,
+                    "email__subject": "Smart Dog Door Login",
+                    "email__body": f"<p>Click here to login: <a href='/login_link__clicked_login_link?token={login_link['login_link__token']}'>Login</a></p>",
+                }
+
                 await self.send_email.send_email(email=email)
+
                 self.logger.info(f"Login sent to {email_address}")
+
                 await self.login_link_db.insert(login_link)
 
                 return ResultPageHttpApi.redirect(
