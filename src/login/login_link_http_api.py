@@ -58,20 +58,24 @@ class LoginLinkHttpApi(HttpApi):
                         link_label="Back",
                         link_url="/login_link__send",
                     )
+
                 self.logger.info(f"Login requested for {email_address}")
+
                 login_link = {
                     "login_link__id": new_id("login_link__"),
                     "login_link__token": new_id("login_link_token__"),
                     "login_link__requested_at_utc_iso": datetime.now().isoformat(),
-                    "login_link__status": "login_link_status.pending",
-                    "login_link__email_id": new_id("email_id__"),
+                    "login_link__email_id": new_id("email__"),
                 }
+
                 email = {
                     "email__id": login_link["login_link__email_id"],
                     "email__to": email_address,
                     "email__subject": "Smart Dog Door Login",
                     "email__body": f"<p>Click here to login: <a href='/login_link__clicked_login_link?token={login_link['login_link__token']}'>Login</a></p>",
                 }
+
+                assert email["email__id"] == login_link["login_link__email_id"]
 
                 await self.send_email.send_email(email=email)
 

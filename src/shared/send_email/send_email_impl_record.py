@@ -12,8 +12,8 @@ class SendEmailImplRecord(SendEmail):
         self._send_email = send_email
         self._email_db = email_db
 
-    async def send_email(self, email: dict) -> None:
-        self._send_email.send_email(email)
+    async def send_email(self, email: dict):
+        await self._send_email.send_email(email)
         await self._email_db.insert(email)
         self._logger.info(
             f"Sent email to {email['email__to']} with subject {email['email__subject']} and body {email['email__body']}"

@@ -22,7 +22,13 @@ class LoginLinkDb:
             CREATE INDEX IF NOT EXISTS login_links_login_link__token_index ON login_links (login_link__token)
             """,
             """
-            ALTER TABLE login_links ADD COLUMN login_link__email_id TEXT
+            SELECT CASE 
+                WHEN NOT EXISTS (
+                    SELECT 1 FROM pragma_table_info('login_links') WHERE name='login_link__email_id'
+                )
+                THEN 'ALTER TABLE login_links ADD COLUMN login_link__email_id TEXT'
+            END AS sql_statement
+            WHERE sql_statement IS NOT NULL
             """,
         ]
 

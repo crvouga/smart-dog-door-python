@@ -43,9 +43,13 @@ class AppHttpApi(LifeCycle):
         config = uvicorn.Config(self.app, host="0.0.0.0", port=8000, log_level="info")
         self._server = uvicorn.Server(config)
 
-    async def start(self) -> None:
+    def start(self) -> None:
         self.logger.info("Starting server on port 8000")
+        import asyncio
 
+        asyncio.run(self._start_async())
+
+    async def _start_async(self) -> None:
         self.logger.info("Running database migrations...")
         async with self.sql_db.transaction() as tx:
             for s in self.login_link_db.up():
@@ -53,9 +57,8 @@ class AppHttpApi(LifeCycle):
             for s in self.email_db.up():
                 await tx.execute(s, ())
         self.logger.info("Database migrations completed successfully")
-
         await self._server.serve()
 
-    async def stop(self) -> None:
+    def stop(self) -> None:
         self.logger.info("Stopping server")
         self._server.should_exit = True
