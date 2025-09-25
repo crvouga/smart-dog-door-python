@@ -96,3 +96,6 @@ help:
 
 db:
 	sqlite3 main.db
+
+kp:
+	npx kill-port 8000

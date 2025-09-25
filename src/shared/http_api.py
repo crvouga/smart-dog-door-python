@@ -1,8 +1,8 @@
-import logging
+from src.ctx import Ctx
 from fastapi import APIRouter
 
 
 class HttpApi:
-    def __init__(self, logger: logging.Logger):
-        self.logger = logger.getChild(__name__)
+    def __init__(self, ctx: Ctx):
+        self.logger = ctx.logger.getChild(__name__)
         self.api_router = APIRouter()

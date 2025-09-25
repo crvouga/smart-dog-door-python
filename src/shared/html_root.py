@@ -1,3 +1,6 @@
+from fastapi.responses import HTMLResponse
+
+
 class HtmlRoot:
     @staticmethod
     def view(title: str, children: str) -> str:
@@ -16,3 +19,12 @@ class HtmlRoot:
         </main>
     </body>
 </html>"""
+
+    @staticmethod
+    def response(title: str, children: str) -> HTMLResponse:
+        return HTMLResponse(
+            content=HtmlRoot.view(
+                title=title,
+                children=children,
+            ),
+        )

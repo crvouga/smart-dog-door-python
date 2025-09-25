@@ -1,4 +1,4 @@
-from src.library.sql_db import SqlDb
+from src.library.sql_db import SqlDb, Tx
 from src.library.sql import Sql
 from typing import Dict, Any
 
@@ -23,9 +23,9 @@ class EmailDb:
             """,
         ]
 
-    async def insert(self, email: Dict[str, Any]) -> None:
+    async def insert(self, tx: Tx, email: Dict[str, Any]) -> None:
         sql, params = Sql.dict_to_insert("emails", email)
-        await self._sql_db.execute(sql, params)
+        await tx.execute(sql, params)
 
     async def find_by_id(self, email__id: str) -> Dict[str, Any]:
         found = await self._sql_db.query(

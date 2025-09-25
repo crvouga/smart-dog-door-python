@@ -132,7 +132,7 @@ class SqlDb(ISqlDb):
                 return [dict(row) for row in rows]
 
     @asynccontextmanager
-    async def transaction(self) -> AsyncGenerator["Transaction", None]:
+    async def transaction(self) -> AsyncGenerator["Tx", None]:
         """Context manager for database transactions.
 
         Ensures all operations within the transaction are atomic.
@@ -148,7 +148,7 @@ class SqlDb(ISqlDb):
             # For in-memory databases, use the existing connection
             conn = await self._get_connection()
             try:
-                yield Transaction(conn)
+                yield Tx(conn)
                 await conn.commit()
             except Exception as e:
                 await conn.rollback()
@@ -157,7 +157,7 @@ class SqlDb(ISqlDb):
             # For file databases, create a new connection for the transaction
             async with aiosqlite.connect(self._db_path) as conn:
                 try:
-                    yield Transaction(conn)
+                    yield Tx(conn)
                     await conn.commit()
                 except Exception as e:
                     await conn.rollback()
@@ -170,7 +170,7 @@ class SqlDb(ISqlDb):
             self._conn = None
 
 
-class Transaction(ISqlDb):
+class Tx(ISqlDb):
     """A transaction wrapper that implements the same interface as SqlDb.
 
     This allows code to be agnostic to whether it's working with a regular

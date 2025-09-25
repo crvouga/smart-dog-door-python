@@ -10,9 +10,8 @@ class SendEmailImpl:
     @staticmethod
     def init(logger: logging.Logger, sql_db: SqlDb) -> SendEmail:
         logger = logger.getChild("send_email_impl")
-        send_email = SendEmailImplRecord(
+        return SendEmailImplRecord(
             logger=logger,
             send_email=SendEmailImplNoop(logger=logger),
             email_db=EmailDb(sql_db=sql_db),
         )
-        return send_email

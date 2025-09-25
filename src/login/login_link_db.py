@@ -1,4 +1,4 @@
-from src.library.sql_db import SqlDb
+from src.library.sql_db import SqlDb, Tx
 from src.library.sql import Sql
 from typing import Dict, Any
 
@@ -15,29 +15,27 @@ class LoginLinkDb:
                 login_link__email_address TEXT,
                 login_link__token TEXT,
                 login_link__requested_at_utc_iso TEXT,
-                login_link__status TEXT
+                login_link__status TEXT,
+                login_link__email_id TEXT
             )
             """,
             """
             CREATE INDEX IF NOT EXISTS login_links_login_link__token_index ON login_links (login_link__token)
             """,
-            """
-            SELECT CASE 
-                WHEN NOT EXISTS (
-                    SELECT 1 FROM pragma_table_info('login_links') WHERE name='login_link__email_id'
-                )
-                THEN 'ALTER TABLE login_links ADD COLUMN login_link__email_id TEXT'
-            END AS sql_statement
-            WHERE sql_statement IS NOT NULL
-            """,
         ]
 
-    async def insert(self, login_link: Dict[str, Any]) -> None:
+    async def insert(self, tx: Tx, login_link: Dict[str, Any]) -> None:
         sql, params = Sql.dict_to_insert("login_links", login_link)
-        await self._sql_db.execute(sql, params)
+        await tx.execute(sql, params)
 
-    async def find_by_token(self, login_link__token: str) -> Dict[str, Any]:
-        found = await self._sql_db.query(
+    async def update(self, tx: Tx, login_link: Dict[str, Any]) -> None:
+        sql, params = Sql.dict_to_update_one_by_primary_key(
+            "login_links", login_link, "login_link__id"
+        )
+        await tx.execute(sql, params)
+
+    async def find_by_token(self, tx: Tx, login_link__token: str) -> Dict[str, Any]:
+        found = await tx.query(
             f"SELECT * FROM login_links WHERE login_link__token = ? LIMIT 1",
             (login_link__token,),
         )

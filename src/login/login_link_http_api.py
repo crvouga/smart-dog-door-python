@@ -4,30 +4,25 @@ from src.library.new_id import new_id
 from fastapi.responses import HTMLResponse, RedirectResponse
 from typing import Union
 from src.shared.html_root import HtmlRoot
-from src.shared.send_email.send_email_interface import SendEmail
 from src.shared.result_page.result_page_http_api import ResultPageHttpApi
 from src.login.login_link import LoginLink
-from src.login.login_link_db import LoginLinkDb
 from datetime import datetime
 from src.shared.http_api import HttpApi
+from src.ctx import Ctx
 
 
 class LoginLinkHttpApi(HttpApi):
 
-    def __init__(
-        self, logger: logging.Logger, send_email: SendEmail, login_link_db: LoginLinkDb
-    ):
-        super().__init__(logger=logger)
-        self.send_email = send_email
-        self.login_link_db = login_link_db
+    def __init__(self, ctx: Ctx):
+        super().__init__(ctx=ctx)
+        self.ctx = ctx
 
         @self.api_router.get("/login_link__send")
-        async def send_login_link_page() -> HTMLResponse:
+        async def send_login_link_page():
             self.logger.info("Login requested")
-            return HTMLResponse(
-                HtmlRoot.view(
-                    title="Smart Dog Door Login",
-                    children="""
+            return HtmlRoot.response(
+                title="Smart Dog Door Login",
+                children="""
                     <main class="container">
                         <h1>Smart Dog Door Login</h1>
                         <p>Enter your email to receive a login link.</p>
@@ -40,7 +35,6 @@ class LoginLinkHttpApi(HttpApi):
                         </form>
                     </main>
                     """,
-                )
             )
 
         @self.api_router.post("/login_link__send", response_model=None)
@@ -71,17 +65,18 @@ class LoginLinkHttpApi(HttpApi):
                 email = {
                     "email__id": login_link["login_link__email_id"],
                     "email__to": email_address,
-                    "email__subject": "Smart Dog Door Login",
-                    "email__body": f"<p>Click here to login: <a href='/login_link__clicked_login_link?token={login_link['login_link__token']}'>Login</a></p>",
+                    "email__subject": "Smart Dog Door Login Link",
+                    "email__body": f"<p>Click here to login: <a href='/login_link__clicked_login_link?login_link__token={login_link['login_link__token']}'>Login</a></p>",
                 }
 
                 assert email["email__id"] == login_link["login_link__email_id"]
 
-                await self.send_email.send_email(email=email)
+                async with self.ctx.sql_db.transaction() as tx:
+                    await self.ctx.send_email.send_email(tx, email)
 
-                self.logger.info(f"Login sent to {email_address}")
+                    self.logger.info(f"Login sent to {email_address}")
 
-                await self.login_link_db.insert(login_link)
+                    await self.ctx.login_link_db.insert(tx, login_link)
 
                 return ResultPageHttpApi.redirect(
                     title="Sent login link",
@@ -99,29 +94,66 @@ class LoginLinkHttpApi(HttpApi):
                 )
 
         @self.api_router.get("/login_link__clicked_login_link", response_model=None)
-        async def clicked_login_link(
-            request: Request,
-        ) -> Union[HTMLResponse, RedirectResponse]:
+        async def clicked_login_link(request: Request):
             self.logger.info("Clicked login link")
-            login_link_token = request.query_params["token"]
-            clicked_link = await self.login_link_db.find_by_token(login_link_token)
-            if clicked_link is None:
+            login_link_token = request.query_params["login_link__token"]
+            if not isinstance(login_link_token, str):
+                return ResultPageHttpApi.redirect(
+                    title="Invalid login link token",
+                    body="Invalid login link token",
+                    link_label="Back",
+                    link_url="/login_link__send",
+                )
+            async with self.ctx.sql_db.transaction() as tx:
+                found = await self.ctx.login_link_db.find_by_token(tx, login_link_token)
+            if found is None:
                 return ResultPageHttpApi.redirect(
                     title="Login link not found",
                     body="Login link not found",
                     link_label="Back",
                     link_url="/login_link__send",
                 )
-            if LoginLink.is_expired(clicked_link):
+            if LoginLink.is_expired(found):
                 return ResultPageHttpApi.redirect(
                     title="Login link expired",
                     body="Login link expired",
                     link_label="Back",
                     link_url="/login_link__send",
                 )
-            return ResultPageHttpApi.redirect(
-                title="Login link clicked",
-                body="Login link clicked",
-                link_label="Back",
-                link_url="/login_link__send",
-            )
+
+            session_id = request.cookies.get("session_id")
+            if not isinstance(session_id, str):
+                return ResultPageHttpApi.redirect(
+                    title="Invalid session id",
+                    body="Invalid session id",
+                    link_label="Back",
+                    link_url="/login_link__send",
+                )
+
+            async with self.ctx.sql_db.transaction() as tx:
+                login_link_new = {
+                    **found,
+                    "login_link__status": "clicked",
+                    "login_link__used_at_utc_iso": datetime.now().isoformat(),
+                }
+                await self.ctx.login_link_db.update(tx, login_link_new)
+
+                found_user = await self.ctx.user_db.find_by_email_address(
+                    found["login_link__email_address"],
+                )
+
+                user_session_new = {
+                    "user_session__id": new_id("user_session__"),
+                    "user_session__login_link_id": found["login_link__id"],
+                    "user_session__created_at_utc_iso": datetime.now().isoformat(),
+                    "user_session__session_id": session_id,
+                    "user_session__user_id": found_user["user__id"],
+                }
+                await self.ctx.user_session_db.insert(tx, user_session_new)
+
+                return ResultPageHttpApi.redirect(
+                    title="Logged in",
+                    body="Logged in",
+                    link_label="Home",
+                    link_url="/",
+                )
