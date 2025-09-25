@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import RedirectResponse
 import uvicorn
 from src.library.life_cycle import LifeCycle
@@ -9,6 +9,8 @@ from src.shared.result_page.result_page_http_api import ResultPageHttpApi
 from src.shared.http_api import HttpApi
 from src.shared.send_email.sent_emails_http_api import SentEmailsHttpApi
 from src.ctx import Ctx
+from src.library.new_id import new_id
+from starlette.middleware.base import BaseHTTPMiddleware
 
 
 class AppHttpApi(LifeCycle):
@@ -17,6 +19,17 @@ class AppHttpApi(LifeCycle):
         self.logger = logging.getLogger("app")
         self.app = FastAPI()
         self.ctx = Ctx(logger=self.logger)
+
+        async def session_middleware(request: Request, call_next):
+            if not request.cookies.get("session_id"):
+                response = await call_next(request)
+                response.set_cookie(
+                    key="session_id", value=new_id("session__"), httponly=True
+                )
+                return response
+            return await call_next(request)
+
+        self.app.add_middleware(BaseHTTPMiddleware, dispatch=session_middleware)
 
         http_apis: list[HttpApi] = [
             HealthCheckHttpApi(ctx=self.ctx),

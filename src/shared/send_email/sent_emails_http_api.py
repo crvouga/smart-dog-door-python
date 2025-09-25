@@ -92,7 +92,7 @@ class SentEmailsHttpApi(HttpApi):
                     <p><strong>Sent:</strong> {html.escape(str(email.get('email__sent_at_utc_iso', '')))}</p>
                 </div>
                 <div class="email-body">
-                    <p>{html.escape(str(email.get('email__body', '')))}</p>
+                    <p>{str(email.get('email__body', ''))}</p>
                 </div>
             </main>
             """,

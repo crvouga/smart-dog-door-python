@@ -16,7 +16,8 @@ class LoginLinkDb:
                 login_link__token TEXT,
                 login_link__requested_at_utc_iso TEXT,
                 login_link__status TEXT,
-                login_link__email_id TEXT
+                login_link__email_id TEXT,
+                login_link__used_at_utc_iso TEXT
             )
             """,
             """

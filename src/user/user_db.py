@@ -1,4 +1,4 @@
-from src.library.sql_db import SqlDb
+from src.library.sql_db import SqlDb, Tx
 from src.library.sql import Sql
 from typing import Dict, Any
 
@@ -13,7 +13,7 @@ class UserDb:
             CREATE TABLE IF NOT EXISTS users (
                 user__id TEXT PRIMARY KEY,
                 user__email_address TEXT,
-                user__password TEXT
+                user__created_at_utc_iso TEXT
             )
             """,
             """
@@ -21,13 +21,15 @@ class UserDb:
             """,
         ]
 
-    async def insert(self, user: Dict[str, Any]) -> None:
+    async def insert(self, tx: Tx, user: Dict[str, Any]) -> None:
         sql, params = Sql.dict_to_insert("users", user)
-        await self._sql_db.execute(sql, params)
+        await tx.execute(sql, params)
 
-    async def find_by_email_address(self, user__email_address: str) -> Dict[str, Any]:
-        found = await self._sql_db.query(
+    async def find_by_email_address(
+        self, tx: Tx, user__email_address: str
+    ) -> Dict[str, Any]:
+        found = await tx.query(
             "SELECT * FROM users WHERE user__email_address = ? LIMIT 1",
             (user__email_address,),
         )
-        return found[0]
+        return found[0] if found else None

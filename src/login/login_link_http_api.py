@@ -139,15 +139,23 @@ class LoginLinkHttpApi(HttpApi):
                 await self.ctx.login_link_db.update(tx, login_link_new)
 
                 found_user = await self.ctx.user_db.find_by_email_address(
-                    found["login_link__email_address"],
+                    tx, found["login_link__email_address"]
                 )
+
+                if not found_user:
+                    user = {
+                        "user__id": new_id("user__"),
+                        "user__email_address": found["login_link__email_address"],
+                        "user__created_at_utc_iso": datetime.now().isoformat(),
+                    }
+                    await self.ctx.user_db.insert(tx, user)
 
                 user_session_new = {
                     "user_session__id": new_id("user_session__"),
                     "user_session__login_link_id": found["login_link__id"],
                     "user_session__created_at_utc_iso": datetime.now().isoformat(),
                     "user_session__session_id": session_id,
-                    "user_session__user_id": found_user["user__id"],
+                    "user_session__user_id": user["user__id"],
                 }
                 await self.ctx.user_session_db.insert(tx, user_session_new)
 
