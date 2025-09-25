@@ -60,6 +60,8 @@ class LoginLinkHttpApi(HttpApi):
                     "login_link__token": new_id("login_link_token__"),
                     "login_link__requested_at_utc_iso": datetime.now().isoformat(),
                     "login_link__email_id": new_id("email__"),
+                    "login_link__email_address": email_address,
+                    "login_link__status": "pending",
                 }
 
                 email = {
@@ -150,11 +152,11 @@ class LoginLinkHttpApi(HttpApi):
                 }
                 await self.ctx.login_link_db.update(tx, login_link_new)
 
-                found_user = await self.ctx.user_db.find_by_email_address(
+                user = await self.ctx.user_db.find_by_email_address(
                     tx, found["login_link__email_address"]
                 )
 
-                if not found_user:
+                if not user:
                     user = {
                         "user__id": new_id("user__"),
                         "user__email_address": found["login_link__email_address"],
