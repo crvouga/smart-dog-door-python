@@ -28,41 +28,22 @@ def in_memory_db():
     # Create in-memory database
     db = SqlDb(":memory:")
     yield db
-    # Cleanup - close connection (this will be handled by the test teardown)
+
+
+@pytest.fixture(params=["file", "memory"])
+def any_db(request, db, in_memory_db):
+    if request.param == "file":
+        return db
+    else:
+        return in_memory_db
 
 
 @pytest.mark.asyncio
-async def test_execute_insert(db):
-    # Create test table first
-    await db.execute(
-        """
-        CREATE TABLE IF NOT EXISTS test_table (
-            id INTEGER PRIMARY KEY,
-            name TEXT,
-            value INTEGER
-        )
-        """,
-        (),
-    )
-
-    # Test inserting data
-    await db.execute(
-        "INSERT INTO test_table (name, value) VALUES (?, ?)", ("test_name", 123)
-    )
-
-    # Verify insertion
-    rows = await db.query("SELECT * FROM test_table WHERE name = ?", ("test_name",))
-
-    assert len(rows) == 1
-    assert rows[0]["name"] == "test_name"
-    assert rows[0]["value"] == 123
-
-
-@pytest.mark.asyncio
-async def test_execute_insert_in_memory(in_memory_db: SqlDb):
+async def test_execute_insert(any_db):
+    db = any_db
     try:
         # Create test table first
-        await in_memory_db.execute(
+        await db.execute(
             """
             CREATE TABLE IF NOT EXISTS test_table (
                 id INTEGER PRIMARY KEY,
@@ -74,57 +55,27 @@ async def test_execute_insert_in_memory(in_memory_db: SqlDb):
         )
 
         # Test inserting data
-        await in_memory_db.execute(
+        await db.execute(
             "INSERT INTO test_table (name, value) VALUES (?, ?)", ("test_name", 123)
         )
 
         # Verify insertion
-        rows = await in_memory_db.query(
-            "SELECT * FROM test_table WHERE name = ?", ("test_name",)
-        )
+        rows = await db.query("SELECT * FROM test_table WHERE name = ?", ("test_name",))
 
         assert len(rows) == 1
         assert rows[0]["name"] == "test_name"
         assert rows[0]["value"] == 123
     finally:
-        await in_memory_db.close()
+        if isinstance(db, SqlDb) and db._is_in_memory:
+            await db.close()
 
 
 @pytest.mark.asyncio
-async def test_query_multiple_rows(db: SqlDb):
-    # Create test table first
-    await db.execute(
-        """
-        CREATE TABLE IF NOT EXISTS test_table (
-            id INTEGER PRIMARY KEY,
-            name TEXT,
-            value INTEGER
-        )
-        """,
-        (),
-    )
-
-    # Insert test data
-    test_data = [("name1", 1), ("name2", 2), ("name3", 3)]
-
-    for name, value in test_data:
-        await db.execute(
-            "INSERT INTO test_table (name, value) VALUES (?, ?)", (name, value)
-        )
-
-    # Query with filter
-    rows = await db.query("SELECT * FROM test_table WHERE value > ?", (1,))
-
-    assert len(rows) == 2
-    assert rows[0]["name"] == "name2"
-    assert rows[1]["name"] == "name3"
-
-
-@pytest.mark.asyncio
-async def test_query_multiple_rows_in_memory(in_memory_db: SqlDb):
+async def test_query_multiple_rows(any_db):
+    db = any_db
     try:
         # Create test table first
-        await in_memory_db.execute(
+        await db.execute(
             """
             CREATE TABLE IF NOT EXISTS test_table (
                 id INTEGER PRIMARY KEY,
@@ -139,47 +90,27 @@ async def test_query_multiple_rows_in_memory(in_memory_db: SqlDb):
         test_data = [("name1", 1), ("name2", 2), ("name3", 3)]
 
         for name, value in test_data:
-            await in_memory_db.execute(
+            await db.execute(
                 "INSERT INTO test_table (name, value) VALUES (?, ?)", (name, value)
             )
 
         # Query with filter
-        rows = await in_memory_db.query(
-            "SELECT * FROM test_table WHERE value > ?", (1,)
-        )
+        rows = await db.query("SELECT * FROM test_table WHERE value > ?", (1,))
 
         assert len(rows) == 2
         assert rows[0]["name"] == "name2"
         assert rows[1]["name"] == "name3"
     finally:
-        await in_memory_db.close()
+        if isinstance(db, SqlDb) and db._is_in_memory:
+            await db.close()
 
 
 @pytest.mark.asyncio
-async def test_query_no_results(db: SqlDb):
-    # Create test table first
-    await db.execute(
-        """
-        CREATE TABLE IF NOT EXISTS test_table (
-            id INTEGER PRIMARY KEY,
-            name TEXT,
-            value INTEGER
-        )
-        """,
-        (),
-    )
-
-    # Query empty table
-    rows = await db.query("SELECT * FROM test_table WHERE name = ?", ("nonexistent",))
-
-    assert len(rows) == 0
-
-
-@pytest.mark.asyncio
-async def test_query_no_results_in_memory(in_memory_db: SqlDb):
+async def test_query_no_results(any_db):
+    db = any_db
     try:
         # Create test table first
-        await in_memory_db.execute(
+        await db.execute(
             """
             CREATE TABLE IF NOT EXISTS test_table (
                 id INTEGER PRIMARY KEY,
@@ -191,64 +122,34 @@ async def test_query_no_results_in_memory(in_memory_db: SqlDb):
         )
 
         # Query empty table
-        rows = await in_memory_db.query(
+        rows = await db.query(
             "SELECT * FROM test_table WHERE name = ?", ("nonexistent",)
         )
 
         assert len(rows) == 0
     finally:
-        await in_memory_db.close()
+        if isinstance(db, SqlDb) and db._is_in_memory:
+            await db.close()
 
 
 @pytest.mark.asyncio
-async def test_invalid_query(db: SqlDb):
-    # Test invalid SQL syntax
-    with pytest.raises(Exception):
-        await db.execute("INVALID SQL QUERY", ())
+async def test_invalid_query(any_db):
+    db = any_db
+    try:
+        # Test invalid SQL syntax
+        with pytest.raises(Exception):
+            await db.execute("INVALID SQL QUERY", ())
+    finally:
+        if isinstance(db, SqlDb) and db._is_in_memory:
+            await db.close()
 
 
 @pytest.mark.asyncio
-async def test_invalid_query_in_memory(in_memory_db: SqlDb):
-    # Test invalid SQL syntax
-    with pytest.raises(Exception):
-        await in_memory_db.execute("INVALID SQL QUERY", ())
-
-
-@pytest.mark.asyncio
-async def test_transaction_success(db):
-    # Create test table first
-    await db.execute(
-        """
-        CREATE TABLE IF NOT EXISTS test_table (
-            id INTEGER PRIMARY KEY,
-            name TEXT,
-            value INTEGER
-        )
-        """,
-        (),
-    )
-
-    # Test successful transaction
-    async with db.transaction() as conn:
-        await db.execute_in_transaction(
-            conn, "INSERT INTO test_table (name, value) VALUES (?, ?)", ("test1", 1)
-        )
-        await db.execute_in_transaction(
-            conn, "INSERT INTO test_table (name, value) VALUES (?, ?)", ("test2", 2)
-        )
-
-    # Verify both inserts were committed
-    rows = await db.query("SELECT * FROM test_table ORDER BY id")
-    assert len(rows) == 2
-    assert rows[0]["name"] == "test1"
-    assert rows[1]["name"] == "test2"
-
-
-@pytest.mark.asyncio
-async def test_transaction_success_in_memory(in_memory_db: SqlDb):
+async def test_transaction_success(any_db):
+    db = any_db
     try:
         # Create test table first
-        await in_memory_db.execute(
+        await db.execute(
             """
             CREATE TABLE IF NOT EXISTS test_table (
                 id INTEGER PRIMARY KEY,
@@ -260,55 +161,30 @@ async def test_transaction_success_in_memory(in_memory_db: SqlDb):
         )
 
         # Test successful transaction
-        async with in_memory_db.transaction() as conn:
-            await in_memory_db.execute_in_transaction(
-                conn, "INSERT INTO test_table (name, value) VALUES (?, ?)", ("test1", 1)
-            )
-            await in_memory_db.execute_in_transaction(
-                conn, "INSERT INTO test_table (name, value) VALUES (?, ?)", ("test2", 2)
-            )
-
-        # Verify both inserts were committed
-        rows = await in_memory_db.query("SELECT * FROM test_table ORDER BY id")
-        assert len(rows) == 2
-        assert rows[0]["name"] == "test1"
-        assert rows[1]["name"] == "test2"
-    finally:
-        await in_memory_db.close()
-
-
-@pytest.mark.asyncio
-async def test_transaction_rollback_on_exception(db: SqlDb):
-    # Create test table first
-    await db.execute(
-        """
-        CREATE TABLE IF NOT EXISTS test_table (
-            id INTEGER PRIMARY KEY,
-            name TEXT,
-            value INTEGER
-        )
-        """,
-        (),
-    )
-
-    # Test transaction rollback on exception
-    with pytest.raises(ValueError):
         async with db.transaction() as conn:
             await db.execute_in_transaction(
                 conn, "INSERT INTO test_table (name, value) VALUES (?, ?)", ("test1", 1)
             )
-            raise ValueError("Simulated error")
+            await db.execute_in_transaction(
+                conn, "INSERT INTO test_table (name, value) VALUES (?, ?)", ("test2", 2)
+            )
 
-    # Verify no data was committed
-    rows = await db.query("SELECT * FROM test_table")
-    assert len(rows) == 0
+        # Verify both inserts were committed
+        rows = await db.query("SELECT * FROM test_table ORDER BY id")
+        assert len(rows) == 2
+        assert rows[0]["name"] == "test1"
+        assert rows[1]["name"] == "test2"
+    finally:
+        if isinstance(db, SqlDb) and db._is_in_memory:
+            await db.close()
 
 
 @pytest.mark.asyncio
-async def test_transaction_rollback_on_exception_in_memory(in_memory_db: SqlDb):
+async def test_transaction_rollback_on_exception(any_db):
+    db = any_db
     try:
         # Create test table first
-        await in_memory_db.execute(
+        await db.execute(
             """
             CREATE TABLE IF NOT EXISTS test_table (
                 id INTEGER PRIMARY KEY,
@@ -321,8 +197,8 @@ async def test_transaction_rollback_on_exception_in_memory(in_memory_db: SqlDb):
 
         # Test transaction rollback on exception
         with pytest.raises(ValueError):
-            async with in_memory_db.transaction() as conn:
-                await in_memory_db.execute_in_transaction(
+            async with db.transaction() as conn:
+                await db.execute_in_transaction(
                     conn,
                     "INSERT INTO test_table (name, value) VALUES (?, ?)",
                     ("test1", 1),
@@ -330,46 +206,19 @@ async def test_transaction_rollback_on_exception_in_memory(in_memory_db: SqlDb):
                 raise ValueError("Simulated error")
 
         # Verify no data was committed
-        rows = await in_memory_db.query("SELECT * FROM test_table")
+        rows = await db.query("SELECT * FROM test_table")
         assert len(rows) == 0
     finally:
-        await in_memory_db.close()
+        if isinstance(db, SqlDb) and db._is_in_memory:
+            await db.close()
 
 
 @pytest.mark.asyncio
-async def test_query_in_transaction(db: SqlDb):
-    # Create test table first
-    await db.execute(
-        """
-        CREATE TABLE IF NOT EXISTS test_table (
-            id INTEGER PRIMARY KEY,
-            name TEXT,
-            value INTEGER
-        )
-        """,
-        (),
-    )
-
-    # Insert test data
-    await db.execute("INSERT INTO test_table (name, value) VALUES (?, ?)", ("test1", 1))
-    await db.execute("INSERT INTO test_table (name, value) VALUES (?, ?)", ("test2", 2))
-
-    # Test query within transaction
-    async with db.transaction() as conn:
-        rows = await db.query_in_transaction(
-            conn, "SELECT * FROM test_table WHERE value > ?", (1,)
-        )
-
-        assert len(rows) == 1
-        assert rows[0]["name"] == "test2"
-        assert rows[0]["value"] == 2
-
-
-@pytest.mark.asyncio
-async def test_query_in_transaction_in_memory(in_memory_db: SqlDb):
+async def test_query_in_transaction(any_db):
+    db = any_db
     try:
         # Create test table first
-        await in_memory_db.execute(
+        await db.execute(
             """
             CREATE TABLE IF NOT EXISTS test_table (
                 id INTEGER PRIMARY KEY,
@@ -381,16 +230,16 @@ async def test_query_in_transaction_in_memory(in_memory_db: SqlDb):
         )
 
         # Insert test data
-        await in_memory_db.execute(
+        await db.execute(
             "INSERT INTO test_table (name, value) VALUES (?, ?)", ("test1", 1)
         )
-        await in_memory_db.execute(
+        await db.execute(
             "INSERT INTO test_table (name, value) VALUES (?, ?)", ("test2", 2)
         )
 
         # Test query within transaction
-        async with in_memory_db.transaction() as conn:
-            rows = await in_memory_db.query_in_transaction(
+        async with db.transaction() as conn:
+            rows = await db.query_in_transaction(
                 conn, "SELECT * FROM test_table WHERE value > ?", (1,)
             )
 
@@ -398,4 +247,5 @@ async def test_query_in_transaction_in_memory(in_memory_db: SqlDb):
             assert rows[0]["name"] == "test2"
             assert rows[0]["value"] == 2
     finally:
-        await in_memory_db.close()
+        if isinstance(db, SqlDb) and db._is_in_memory:
+            await db.close()
