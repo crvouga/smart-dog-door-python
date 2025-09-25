@@ -7,7 +7,7 @@ import time
 def ticks(interval: timedelta) -> Sub[datetime]:
     pub_sub = PubSub[datetime]()
 
-    def tick_thread():
+    def tick_thread() -> None:
         while True:
             pub_sub.publish(datetime.now())
             time.sleep(interval.total_seconds())

@@ -1,15 +1,13 @@
-from fastapi import APIRouter
 import logging
+from typing import Dict
+from src.shared.http_api import HttpApi
 
 
-class HealthCheckHttpApi:
-    _logger: logging.Logger
-
+class HealthCheckHttpApi(HttpApi):
     def __init__(self, logger: logging.Logger):
-        self._logger = logger.getChild("health_check_http_api")
-        self.api_router = APIRouter()
+        super().__init__(logger=logger)
 
         @self.api_router.get("/health")
-        async def health_check():
-            self._logger.info("Health check requested")
+        async def health_check() -> Dict[str, str]:
+            self.logger.info("Health check requested")
             return {"status": "ok"}

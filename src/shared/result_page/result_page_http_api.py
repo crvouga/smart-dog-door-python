@@ -3,15 +3,17 @@ from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi import Request
 import logging
 from src.shared.html_root import HtmlRoot
+from src.shared.http_api import HttpApi
+from typing import Dict, Any
 
 
-class ResultPage:
+class ResultPageHttpApi(HttpApi):
     def __init__(self, logger: logging.Logger):
-        self._logger = logger.getChild(__name__)
-        self.api_router = APIRouter()
+        super().__init__(logger=logger)
+        self.logger = logger.getChild(__name__)
 
         @self.api_router.get("/result_page")
-        async def result_page(request: Request):
+        async def result_page(request: Request) -> HTMLResponse:
             title = request.query_params["result_page.title"]
             body = request.query_params["result_page.body"]
             link_label = request.query_params["result_page.link_label"]
@@ -29,8 +31,18 @@ class ResultPage:
                 ),
             )
 
+    @property
+    def api_router(self) -> APIRouter:
+        return self._api_router
+
+    @api_router.setter
+    def api_router(self, value: APIRouter) -> None:
+        self._api_router = value
+
     @staticmethod
-    def redirect(title: str, body: str, link_label: str, link_url: str):
+    def redirect(
+        title: str, body: str, link_label: str, link_url: str
+    ) -> RedirectResponse:
         return RedirectResponse(
             url=f"/result_page/?result_page.title={title}&result_page.body={body}&result_page.link_label={link_label}&result_page.link_url={link_url}",
             status_code=303,

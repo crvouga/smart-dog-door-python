@@ -161,12 +161,12 @@ async def test_transaction_success(any_db):
         )
 
         # Test successful transaction
-        async with db.transaction() as conn:
-            await db.execute_in_transaction(
-                conn, "INSERT INTO test_table (name, value) VALUES (?, ?)", ("test1", 1)
+        async with db.transaction() as tx:
+            await tx.execute(
+                "INSERT INTO test_table (name, value) VALUES (?, ?)", ("test1", 1)
             )
-            await db.execute_in_transaction(
-                conn, "INSERT INTO test_table (name, value) VALUES (?, ?)", ("test2", 2)
+            await tx.execute(
+                "INSERT INTO test_table (name, value) VALUES (?, ?)", ("test2", 2)
             )
 
         # Verify both inserts were committed
@@ -197,9 +197,8 @@ async def test_transaction_rollback_on_exception(any_db):
 
         # Test transaction rollback on exception
         with pytest.raises(ValueError):
-            async with db.transaction() as conn:
-                await db.execute_in_transaction(
-                    conn,
+            async with db.transaction() as tx:
+                await tx.execute(
                     "INSERT INTO test_table (name, value) VALUES (?, ?)",
                     ("test1", 1),
                 )
@@ -238,10 +237,8 @@ async def test_query_in_transaction(any_db):
         )
 
         # Test query within transaction
-        async with db.transaction() as conn:
-            rows = await db.query_in_transaction(
-                conn, "SELECT * FROM test_table WHERE value > ?", (1,)
-            )
+        async with db.transaction() as tx:
+            rows = await tx.query("SELECT * FROM test_table WHERE value > ?", (1,))
 
             assert len(rows) == 1
             assert rows[0]["name"] == "test2"

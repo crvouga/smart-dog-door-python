@@ -18,7 +18,7 @@ dev:
 # Run tests
 test:
 	clear
-	python3 -m pytest -m "not slow"
+	python3 -m pytest -m "not slow" --exitfirst
 
 freeze:
 	python3 -m pip freeze > requirements.txt
@@ -31,8 +31,8 @@ tc:
 check:
 	clear
 	source .venv/bin/activate && python3 -m mypy .
-	source .venv/bin/activate && python3 -m pytest -m "not slow"
-	source .venv/bin/activate && python3 -m pytest -m "slow"
+	source .venv/bin/activate && python3 -m pytest -m "not slow" --exitfirst
+	source .venv/bin/activate && python3 -m pytest -m "slow" --exitfirst
 
 reset:
 	make clean

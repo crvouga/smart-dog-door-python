@@ -1,5 +1,6 @@
 from src.library.sql_db import SqlDb
 from src.library.sql import Sql
+from typing import Dict, Any
 
 
 class LoginLinkDb:
@@ -22,11 +23,11 @@ class LoginLinkDb:
             """,
         ]
 
-    async def insert(self, login_link: dict):
+    async def insert(self, login_link: Dict[str, Any]) -> None:
         sql, params = Sql.dict_to_insert("login_links", login_link)
         await self._sql_db.execute(sql, params)
 
-    async def find_by_token(self, login_link__token: str):
+    async def find_by_token(self, login_link__token: str) -> Dict[str, Any]:
         found = await self._sql_db.query(
             f"SELECT * FROM login_links WHERE login_link__token = ? LIMIT 1",
             (login_link__token,),
