@@ -69,24 +69,27 @@ class SqlDb:
             params: Tuple of parameter values to insert into query
 
         Returns:
-            List of database rows matching the query
+            List of dictionaries representing database rows
 
         Example:
             rows = await db.query(
                 "SELECT name FROM users WHERE age > ?",
                 (21,)
             )
+            # Returns: [{"name": "Alice"}, {"name": "Bob"}]
         """
         if self._is_in_memory:
             conn = await self._get_connection()
+            conn.row_factory = aiosqlite.Row
             cursor = await conn.execute(query, params)
             rows = await cursor.fetchall()
-            return rows
+            return [dict(row) for row in rows]
         else:
             async with aiosqlite.connect(self._db_path) as conn:
+                conn.row_factory = aiosqlite.Row
                 cursor = await conn.execute(query, params)
                 rows = await cursor.fetchall()
-                return rows
+                return [dict(row) for row in rows]
 
     async def close(self):
         """Close the database connection."""

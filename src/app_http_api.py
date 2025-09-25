@@ -35,7 +35,7 @@ class AppHttpApi(LifeCycle):
 
         @self._app.get("/")
         def default_router():
-            return RedirectResponse(url="/login_link.send", status_code=303)
+            return RedirectResponse(url="/login_link__send", status_code=303)
 
         config = uvicorn.Config(self._app, host="0.0.0.0", port=8000, log_level="info")
         self._server = uvicorn.Server(config)

@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 class LoginLink:
     @staticmethod
     def to_requested_at_utc_iso(login_link: dict) -> datetime:
-        return datetime.fromisoformat(login_link["login_link.requested_at_utc_iso"])
+        return datetime.fromisoformat(login_link["login_link__requested_at_utc_iso"])
 
     @staticmethod
     def to_age(login_link: dict) -> timedelta:

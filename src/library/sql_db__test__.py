@@ -54,8 +54,8 @@ async def test_execute_insert(db):
     rows = await db.query("SELECT * FROM test_table WHERE name = ?", ("test_name",))
 
     assert len(rows) == 1
-    assert rows[0][1] == "test_name"
-    assert rows[0][2] == 123
+    assert rows[0]["name"] == "test_name"
+    assert rows[0]["value"] == 123
 
 
 @pytest.mark.asyncio
@@ -84,8 +84,8 @@ async def test_execute_insert_in_memory(in_memory_db):
         )
 
         assert len(rows) == 1
-        assert rows[0][1] == "test_name"
-        assert rows[0][2] == 123
+        assert rows[0]["name"] == "test_name"
+        assert rows[0]["value"] == 123
     finally:
         await in_memory_db.close()
 
@@ -116,8 +116,8 @@ async def test_query_multiple_rows(db):
     rows = await db.query("SELECT * FROM test_table WHERE value > ?", (1,))
 
     assert len(rows) == 2
-    assert rows[0][1] == "name2"
-    assert rows[1][1] == "name3"
+    assert rows[0]["name"] == "name2"
+    assert rows[1]["name"] == "name3"
 
 
 @pytest.mark.asyncio
@@ -149,8 +149,8 @@ async def test_query_multiple_rows_in_memory(in_memory_db):
         )
 
         assert len(rows) == 2
-        assert rows[0][1] == "name2"
-        assert rows[1][1] == "name3"
+        assert rows[0]["name"] == "name2"
+        assert rows[1]["name"] == "name3"
     finally:
         await in_memory_db.close()
 
