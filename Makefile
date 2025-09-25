@@ -18,7 +18,7 @@ dev:
 # Run tests
 test:
 	clear
-	python3 -m pytest
+	source .venv/bin/activate && python3 -m pytest
 
 freeze:
 	python3 -m pip freeze > requirements.txt
@@ -30,8 +30,8 @@ tc:
 
 check:
 	clear
-	python3 -m mypy .
-	python3 -m pytest
+	source .venv/bin/activate && python3 -m mypy .
+	source .venv/bin/activate && python3 -m pytest
 
 reset:
 	make clean

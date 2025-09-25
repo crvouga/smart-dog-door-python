@@ -14,19 +14,19 @@ from datetime import datetime
 
 
 class LoginLinkHttpApi:
-    _logger: logging.Logger
-    _send_email: SendEmail
+    logger: logging.Logger
+    send_email: SendEmail
 
     def __init__(self, logger: logging.Logger, send_email: SendEmail, sql_db: SqlDb):
-        self._logger = logger.getChild(__name__)
-        self._send_email = send_email
+        self.logger = logger.getChild(__name__)
+        self.send_email = send_email
         self._sql_db = sql_db
-        self._login_link_db = LoginLinkDb(sql_db=self._sql_db)
+        self.login_link_db = LoginLinkDb(sql_db=self._sql_db)
         self.api_router = APIRouter()
 
         @self.api_router.get("/login_link.send")
         async def send_login_link_page():
-            self._logger.info("Login requested")
+            self.logger.info("Login requested")
             return HTMLResponse(
                 HtmlRoot.view(
                     title="Smart Dog Door Login",
@@ -49,7 +49,7 @@ class LoginLinkHttpApi:
         @self.api_router.post("/login_link.send")
         async def send_login_link(request: Request):
             try:
-                self._logger.info("Login requested")
+                self.logger.info("Login requested")
                 form_data = await request.form()
                 email_address = form_data["login_link.email_address"]
                 if not isinstance(email_address, str):
@@ -59,7 +59,7 @@ class LoginLinkHttpApi:
                         link_label="Back",
                         link_url="/login_link.send",
                     )
-                self._logger.info(f"Login requested for {email_address}")
+                self.logger.info(f"Login requested for {email_address}")
                 login_link = {
                     "login_link.email_address": email_address,
                     "login_link.id": str(uuid.uuid4()),
@@ -74,9 +74,9 @@ class LoginLinkHttpApi:
                     <p>Click here to login: <a href='/login_link.clicked_login_link?token={login_link['login_link.token']}'>Login</a></p>
                     """,
                 )
-                self._send_email.send_email(email=email)
-                self._logger.info(f"Login sent to {email_address}")
-                self._login_link_db.add(login_link)
+                await self.send_email.send_email(email=email)
+                self.logger.info(f"Login sent to {email_address}")
+                await self.login_link_db.add(login_link)
 
                 return ResultPage.redirect(
                     title="Sent login link",
@@ -85,7 +85,7 @@ class LoginLinkHttpApi:
                     link_url="/login_link.send",
                 )
             except Exception as e:
-                self._logger.error(f"Error sending login: {e}")
+                self.logger.error(f"Error sending login: {e}")
                 return ResultPage.redirect(
                     title="Failed to send login link",
                     body="Failed to send login link",
@@ -95,9 +95,9 @@ class LoginLinkHttpApi:
 
         @self.api_router.get("/login_link.clicked_login_link")
         async def clicked_login_link(request: Request):
-            self._logger.info("Clicked login link")
+            self.logger.info("Clicked login link")
             login_link_token = request.query_params["token"]
-            clicked_link = self._login_link_db.find_by_token(login_link_token)
+            clicked_link = await self.login_link_db.find_by_token(login_link_token)
             if clicked_link is None:
                 return ResultPage.redirect(
                     title="Login link not found",
