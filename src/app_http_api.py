@@ -57,14 +57,10 @@ class AppHttpApi(LifeCycle):
     async def _start_async(self) -> None:
         self.logger.info("Running database migrations...")
         async with self.ctx.sql_db.transaction() as tx:
-            for s in self.ctx.login_link_db.up():
-                await tx.execute(s, ())
-            for s in self.ctx.email_db.up():
-                await tx.execute(s, ())
-            for s in self.ctx.user_db.up():
-                await tx.execute(s, ())
-            for s in self.ctx.user_session_db.up():
-                await tx.execute(s, ())
+            await self.ctx.login_link_db.up(tx=tx)
+            await self.ctx.email_db.up(tx=tx)
+            await self.ctx.user_db.up(tx=tx)
+            await self.ctx.user_session_db.up(tx=tx)
         self.logger.info("Database migrations completed successfully")
         await self._server.serve()
 

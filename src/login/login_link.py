@@ -17,3 +17,8 @@ class LoginLink:
         link_age = LoginLink.to_age(login_link)
         is_expired = link_age > timedelta(minutes=10)
         return is_expired
+
+    @staticmethod
+    def is_used(login_link: dict) -> bool:
+        used_at_utc_iso = login_link["login_link__used_at_utc_iso"]
+        return used_at_utc_iso is not None

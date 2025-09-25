@@ -185,7 +185,7 @@ class Tx(ISqlDb):
         """
         self._conn = conn
 
-    async def execute(self, query: str, params: tuple) -> None:
+    async def execute(self, query: str, params: tuple = ()) -> None:
         """Execute a SQL query within the transaction.
 
         Args:

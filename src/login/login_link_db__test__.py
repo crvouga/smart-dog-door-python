@@ -14,23 +14,24 @@ def sql_db() -> SqlDb:
 
 @pytest.fixture
 def login_link_db(sql_db: SqlDb) -> LoginLinkDb:
-    db = LoginLinkDb(sql_db)
+    db = LoginLinkDb()
     return db
 
 
 @pytest.mark.asyncio
-async def test_insert_and_find_by_token(login_link_db: LoginLinkDb) -> None:
+async def test_insert_and_find_by_token(
+    login_link_db: LoginLinkDb, sql_db: SqlDb
+) -> None:
     # Arrange
     # Set up database schema
-    async with login_link_db._sql_db.transaction() as tx:
-        for up_sql in login_link_db.up():
-            await tx.execute(up_sql, ())
+    async with sql_db.transaction() as tx:
+        await login_link_db.up(tx)
 
         login_link: Dict[str, Any] = {
             "login_link__id": "test-id",
             "login_link__email_address": "test@example.com",
             "login_link__token": "test-token",
-            "login_link__requested_at_utc_iso": datetime.utcnow().isoformat(),
+            "login_link__requested_at_utc_iso": datetime.now().isoformat(),
             "login_link__status": "pending",
         }
 
@@ -49,12 +50,13 @@ async def test_insert_and_find_by_token(login_link_db: LoginLinkDb) -> None:
 
 
 @pytest.mark.asyncio
-async def test_find_by_token_not_found(login_link_db: LoginLinkDb) -> None:
+async def test_find_by_token_not_found(
+    login_link_db: LoginLinkDb, sql_db: SqlDb
+) -> None:
     # Arrange
     # Set up database schema
-    async with login_link_db._sql_db.transaction() as tx:
-        for up_sql in login_link_db.up():
-            await tx.execute(up_sql, ())
+    async with sql_db.transaction() as tx:
+        await login_link_db.up(tx)
 
         # Act
         with pytest.raises(IndexError):

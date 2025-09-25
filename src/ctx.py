@@ -11,8 +11,8 @@ class Ctx:
     def __init__(self, logger: logging.Logger):
         self.logger = logging.getLogger(__name__)
         self.sql_db = SqlDb(db_path="main.db")
-        self.send_email = SendEmailImpl.init(logger=self.logger, sql_db=self.sql_db)
-        self.login_link_db = LoginLinkDb(sql_db=self.sql_db)
-        self.user_db = UserDb(sql_db=self.sql_db)
-        self.email_db = EmailDb(sql_db=self.sql_db)
-        self.user_session_db = UserSessionDb(sql_db=self.sql_db)
+        self.send_email = SendEmailImpl.init(logger=self.logger)
+        self.login_link_db = LoginLinkDb()
+        self.user_db = UserDb()
+        self.email_db = EmailDb()
+        self.user_session_db = UserSessionDb()

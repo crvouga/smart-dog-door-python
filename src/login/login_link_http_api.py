@@ -95,42 +95,54 @@ class LoginLinkHttpApi(HttpApi):
 
         @self.api_router.get("/login_link__clicked_login_link", response_model=None)
         async def clicked_login_link(request: Request):
-            self.logger.info("Clicked login link")
-            login_link_token = request.query_params["login_link__token"]
-            if not isinstance(login_link_token, str):
-                return ResultPageHttpApi.redirect(
-                    title="Invalid login link token",
-                    body="Invalid login link token",
-                    link_label="Back",
-                    link_url="/login_link__send",
-                )
             async with self.ctx.sql_db.transaction() as tx:
+                self.logger.info("Clicked login link")
+
+                login_link_token = request.query_params["login_link__token"]
+
+                if not isinstance(login_link_token, str):
+                    return ResultPageHttpApi.redirect(
+                        title="Invalid login link token",
+                        body="Invalid login link token",
+                        link_label="Back",
+                        link_url="/login_link__send",
+                    )
+
                 found = await self.ctx.login_link_db.find_by_token(tx, login_link_token)
-            if found is None:
-                return ResultPageHttpApi.redirect(
-                    title="Login link not found",
-                    body="Login link not found",
-                    link_label="Back",
-                    link_url="/login_link__send",
-                )
-            if LoginLink.is_expired(found):
-                return ResultPageHttpApi.redirect(
-                    title="Login link expired",
-                    body="Login link expired",
-                    link_label="Back",
-                    link_url="/login_link__send",
-                )
 
-            session_id = request.cookies.get("session_id")
-            if not isinstance(session_id, str):
-                return ResultPageHttpApi.redirect(
-                    title="Invalid session id",
-                    body="Invalid session id",
-                    link_label="Back",
-                    link_url="/login_link__send",
-                )
+                if found is None:
+                    return ResultPageHttpApi.redirect(
+                        title="Login link not found",
+                        body="Login link not found",
+                        link_label="Back",
+                        link_url="/login_link__send",
+                    )
 
-            async with self.ctx.sql_db.transaction() as tx:
+                if LoginLink.is_expired(found):
+                    return ResultPageHttpApi.redirect(
+                        title="Login link expired",
+                        body="Login link expired",
+                        link_label="Back",
+                        link_url="/login_link__send",
+                    )
+
+                if LoginLink.is_used(found):
+                    return ResultPageHttpApi.redirect(
+                        title="Login link already used",
+                        body="Login link already used",
+                        link_label="Back",
+                        link_url="/login_link__send",
+                    )
+
+                session_id = request.cookies.get("session_id")
+                if not isinstance(session_id, str):
+                    return ResultPageHttpApi.redirect(
+                        title="Invalid session id",
+                        body="Invalid session id",
+                        link_label="Back",
+                        link_url="/login_link__send",
+                    )
+
                 login_link_new = {
                     **found,
                     "login_link__status": "clicked",

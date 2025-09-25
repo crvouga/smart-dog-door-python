@@ -1,14 +1,11 @@
-from src.library.sql_db import SqlDb, Tx
+from src.library.sql_db import Tx
 from src.library.sql import Sql
 from typing import Dict, Any
 
 
 class LoginLinkDb:
-    def __init__(self, sql_db: SqlDb):
-        self._sql_db = sql_db
-
-    def up(self) -> list[str]:
-        return [
+    async def up(self, tx: Tx):
+        up = [
             """
             CREATE TABLE IF NOT EXISTS login_links (
                 login_link__id TEXT PRIMARY KEY,
@@ -24,6 +21,8 @@ class LoginLinkDb:
             CREATE INDEX IF NOT EXISTS login_links_login_link__token_index ON login_links (login_link__token)
             """,
         ]
+        for sql in up:
+            await tx.execute(sql)
 
     async def insert(self, tx: Tx, login_link: Dict[str, Any]) -> None:
         sql, params = Sql.dict_to_insert("login_links", login_link)
