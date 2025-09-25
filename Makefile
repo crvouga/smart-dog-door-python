@@ -95,4 +95,4 @@ help:
 	@echo "  make python-info  Show Python version information" 
 
 db:
-	sqlite3 app.db
+	sqlite3 main.db

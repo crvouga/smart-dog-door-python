@@ -18,7 +18,7 @@ class AppHttpApi(LifeCycle):
         logging.basicConfig(level=logging.INFO)
         self.logger = logging.getLogger("app")
         self.app = FastAPI()
-        self.sql_db = SqlDb(db_path="app.db")
+        self.sql_db = SqlDb(db_path="main.db")
         self.send_email = SendEmailImpl.init(logger=self.logger, sql_db=self.sql_db)
         self.login_link_db = LoginLinkDb(sql_db=self.sql_db)
         self.email_db = EmailDb(sql_db=self.sql_db)
