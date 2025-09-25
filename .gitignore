@@ -44,3 +44,5 @@ htmlcov/
 # Model files
 assets/models/*
 !assets/models/.gitkeep
+
+main.db
