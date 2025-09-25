@@ -1,12 +1,14 @@
 from fastapi import FastAPI
+from fastapi.responses import RedirectResponse
 import uvicorn
 from src.library.life_cycle import LifeCycle
 import logging
 from src.health_check.health_check_http_api import HealthCheckHttpApi
-from src.login.login_http_api import LoginHttpApi
+from src.login.login_link_http_api import LoginLinkHttpApi
 from src.library.sql_db import SqlDb
 from src.shared.send_email.send_email_impl import SendEmailImpl
 from src.shared.send_email.send_email_interface import SendEmail
+from src.shared.result_page.result_page import ResultPage
 
 
 class AppHttpApi(LifeCycle):
@@ -23,13 +25,17 @@ class AppHttpApi(LifeCycle):
         self._sql_db = SqlDb(db_path="sqlite:///app.db")
         self._send_email = SendEmailImpl.init(logger=self._logger)
 
-        self._health_check_api = HealthCheckHttpApi(logger=self._logger)
-        self._login_api = LoginHttpApi(
-            logger=self._logger, sql_db=self._sql_db, send_email=self._send_email
+        self._app.include_router(HealthCheckHttpApi(logger=self._logger).api_router)
+        self._app.include_router(
+            LoginLinkHttpApi(
+                logger=self._logger, sql_db=self._sql_db, send_email=self._send_email
+            ).api_router
         )
+        self._app.include_router(ResultPage(logger=self._logger).api_router)
 
-        self._app.include_router(self._health_check_api.router)
-        self._app.include_router(self._login_api.router)
+        @self._app.get("/")
+        def default_router():
+            return RedirectResponse(url="/login_link.send", status_code=303)
 
         config = uvicorn.Config(self._app, host="0.0.0.0", port=8000, log_level="info")
         self._server = uvicorn.Server(config)
