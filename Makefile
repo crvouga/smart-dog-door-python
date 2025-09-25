@@ -93,3 +93,6 @@ help:
 	@echo "  make clean        Clean up temporary files"
 	@echo "  make venv         Create a virtual environment"
 	@echo "  make python-info  Show Python version information" 
+
+db:
+	sqlite3 app.db

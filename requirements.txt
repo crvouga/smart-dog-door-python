@@ -20,6 +20,7 @@ cycler==0.12.1
 docopt==0.6.2
 dotenv==0.9.9
 exceptiongroup==1.2.2
+execnet==2.1.1
 fastapi==0.115.6
 filelock==3.18.0
 flake8==7.2.0
@@ -67,11 +68,13 @@ PySide6==6.9.0
 PySide6_Addons==6.9.0
 PySide6_Essentials==6.9.0
 pytest==8.3.5
+pytest-asyncio==1.2.0
 pytest-watch==4.2.0
 pytest-xdist==3.6.1
 python-dateutil==2.9.0.post0
 python-dotenv==1.1.0
 python-kasa==0.7.7
+python-multipart==0.0.20
 pytz==2025.2
 PyYAML==6.0.2
 requests==2.32.3

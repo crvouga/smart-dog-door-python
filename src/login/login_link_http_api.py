@@ -45,7 +45,7 @@ class LoginLinkHttpApi(HttpApi):
                 )
             )
 
-        @self.api_router.post("/login_link__send")
+        @self.api_router.post("/login_link__send", response_model=None)
         async def send_login_link(
             request: Request,
         ) -> Union[HTMLResponse, RedirectResponse]:
@@ -89,12 +89,12 @@ class LoginLinkHttpApi(HttpApi):
                 self.logger.error(f"Error sending login: {e}")
                 return ResultPageHttpApi.redirect(
                     title="Failed to send login link",
-                    body="Failed to send login link",
+                    body=f"Failed to send login link: {e}",
                     link_label="Back",
                     link_url="/login_link__send",
                 )
 
-        @self.api_router.get("/login_link__clicked_login_link")
+        @self.api_router.get("/login_link__clicked_login_link", response_model=None)
         async def clicked_login_link(
             request: Request,
         ) -> Union[HTMLResponse, RedirectResponse]:

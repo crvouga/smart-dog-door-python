@@ -1,3 +1,4 @@
+import asyncio
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 import uvicorn
@@ -5,6 +6,7 @@ from src.library.life_cycle import LifeCycle
 import logging
 from src.health_check.health_check_http_api import HealthCheckHttpApi
 from src.login.login_link_http_api import LoginLinkHttpApi
+from src.login.login_link_db import LoginLinkDb
 from src.library.sql_db import SqlDb
 from src.shared.send_email.send_email_impl import SendEmailImpl
 from src.shared.send_email.send_email_interface import SendEmail
@@ -23,7 +25,7 @@ class AppHttpApi(LifeCycle):
         logging.basicConfig(level=logging.INFO)
         self.logger = logging.getLogger("app")
         self.app = FastAPI()
-        self.sql_db = SqlDb(db_path="sqlite:///app.db")
+        self.sql_db = SqlDb(db_path="app.db")
         self.send_email = SendEmailImpl.init(logger=self.logger)
 
         http_apis: list[HttpApi] = [
@@ -44,10 +46,16 @@ class AppHttpApi(LifeCycle):
         config = uvicorn.Config(self.app, host="0.0.0.0", port=8000, log_level="info")
         self._server = uvicorn.Server(config)
 
-    def start(self) -> None:
+    async def start(self) -> None:
         self.logger.info("Starting server on port 8000")
-        self._server.run()
+        self.logger.info("Initializing database...")
+        login_link_db = LoginLinkDb(sql_db=self.sql_db)
+        async with self.sql_db.transaction() as tx:
+            for up_sql in login_link_db.up():
+                await tx.execute(up_sql, ())
+        self.logger.info("Database initialized successfully")
+        await self._server.serve()
 
-    def stop(self) -> None:
+    async def stop(self) -> None:
         self.logger.info("Stopping server")
         self._server.should_exit = True
