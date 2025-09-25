@@ -48,8 +48,9 @@ async def test_insert_and_find_by_token(login_link_db: LoginLinkDb) -> None:
 async def test_find_by_token_not_found(login_link_db: LoginLinkDb) -> None:
     # Arrange
     # Set up database schema
-    for up_sql in login_link_db.up():
-        await login_link_db._sql_db.execute(up_sql, ())
+    async with login_link_db._sql_db.transaction() as conn:
+        for up_sql in login_link_db.up():
+            await login_link_db._sql_db.execute_in_transaction(conn, up_sql, ())
 
     # Act
     with pytest.raises(IndexError):
