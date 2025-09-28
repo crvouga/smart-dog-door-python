@@ -8,14 +8,23 @@ from src.shared.result_page.result_page_http_api import ResultPageHttpApi
 from src.login.login_link import LoginLink
 from datetime import datetime
 from src.shared.http_api import HttpApi
-from src.ctx import Ctx
+from fastapi import APIRouter
+from src.library.sql_db import SqlDb
+from src.login.login_link_db import LoginLinkDb
+from src.shared.send_email.send_email_impl import SendEmailImpl
+from src.user.user_db import UserDb
+from src.user.user_session_db import UserSessionDb
 
 
 class LoginLinkHttpApi(HttpApi):
 
-    def __init__(self, ctx: Ctx):
-        super().__init__(ctx=ctx)
-        self.ctx = ctx
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.logger = kwargs.get("logger")
+        assert isinstance(self.logger, logging.Logger)
+        self.sql_db = kwargs.get("sql_db")
+        assert isinstance(self.sql_db, SqlDb)
+        self.send_email = SendEmailImpl.init(self.logger)
 
         @self.api_router.get("/login_link__send")
         async def send_login_link_page():
@@ -73,12 +82,12 @@ class LoginLinkHttpApi(HttpApi):
 
                 assert email["email__id"] == login_link["login_link__email_id"]
 
-                async with self.ctx.sql_db.transaction() as tx:
-                    await self.ctx.send_email.send_email(tx, email)
+                async with self.sql_db.transaction() as tx:
+                    await self.send_email.send_email(tx, email)
 
                     self.logger.info(f"Login sent to {email_address}")
 
-                    await self.ctx.login_link_db.insert(tx, login_link)
+                    await LoginLinkDb().insert(tx, login_link)
 
                 return ResultPageHttpApi.redirect(
                     title="Sent login link",
@@ -97,7 +106,7 @@ class LoginLinkHttpApi(HttpApi):
 
         @self.api_router.get("/login_link__clicked_login_link", response_model=None)
         async def clicked_login_link(request: Request):
-            async with self.ctx.sql_db.transaction() as tx:
+            async with self.sql_db.transaction() as tx:
                 self.logger.info("Clicked login link")
 
                 login_link_token = request.query_params["login_link__token"]
@@ -110,7 +119,7 @@ class LoginLinkHttpApi(HttpApi):
                         link_url="/login_link__send",
                     )
 
-                found = await self.ctx.login_link_db.find_by_token(tx, login_link_token)
+                found = await LoginLinkDb.find_by_token(tx, login_link_token)
 
                 if found is None:
                     return ResultPageHttpApi.redirect(
@@ -150,9 +159,9 @@ class LoginLinkHttpApi(HttpApi):
                     "login_link__status": "clicked",
                     "login_link__used_at_utc_iso": datetime.now().isoformat(),
                 }
-                await self.ctx.login_link_db.update(tx, login_link_new)
+                await LoginLinkDb.update(tx, login_link_new)
 
-                user = await self.ctx.user_db.find_by_email_address(
+                user = await UserDb.find_by_email_address(
                     tx, found["login_link__email_address"]
                 )
 
@@ -162,7 +171,7 @@ class LoginLinkHttpApi(HttpApi):
                         "user__email_address": found["login_link__email_address"],
                         "user__created_at_utc_iso": datetime.now().isoformat(),
                     }
-                    await self.ctx.user_db.insert(tx, user)
+                    await UserDb.insert(tx, user)
 
                 user_session_new = {
                     "user_session__id": new_id("user_session__"),
@@ -171,7 +180,7 @@ class LoginLinkHttpApi(HttpApi):
                     "user_session__session_id": session_id,
                     "user_session__user_id": user["user__id"],
                 }
-                await self.ctx.user_session_db.insert(tx, user_session_new)
+                await UserSessionDb.insert(tx, user_session_new)
 
                 return ResultPageHttpApi.redirect(
                     title="Logged in",

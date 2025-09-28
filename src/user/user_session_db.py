@@ -4,7 +4,8 @@ from typing import Dict, Any
 
 
 class UserSessionDb:
-    async def up(self, tx: Tx):
+    @staticmethod
+    async def up(tx: Tx):
         up = [
             """
             CREATE TABLE IF NOT EXISTS user_sessions (
@@ -29,12 +30,14 @@ class UserSessionDb:
         for sql in up:
             await tx.execute(sql)
 
-    async def insert(self, tx: Tx, user_session: Dict[str, Any]) -> None:
+    @staticmethod
+    async def insert(tx: Tx, user_session: Dict[str, Any]) -> None:
         sql, params = Sql.dict_to_insert("user_sessions", user_session)
         await tx.execute(sql, params)
 
+    @staticmethod
     async def find_by_session_id(
-        self, tx: Tx, user_session__session_id: str
+        tx: Tx, user_session__session_id: str
     ) -> Dict[str, Any]:
         found = await tx.query(
             "SELECT * FROM user_sessions WHERE user_session__session_id = ? LIMIT 1",

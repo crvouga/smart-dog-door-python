@@ -22,9 +22,5 @@ class HtmlRoot:
 
     @staticmethod
     def response(title: str, children: str) -> HTMLResponse:
-        return HTMLResponse(
-            content=HtmlRoot.view(
-                title=title,
-                children=children,
-            ),
-        )
+        content = HtmlRoot.view(title=title, children=children)
+        return HTMLResponse(content=content)

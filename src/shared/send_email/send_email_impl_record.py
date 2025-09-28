@@ -7,12 +7,14 @@ from src.library.sql_db import Tx
 
 class SendEmailImplRecord(SendEmail):
 
-    def __init__(
-        self, logger: logging.Logger, send_email: SendEmail, email_db: EmailDb
-    ):
-        self._logger = logger.getChild("record_sent_emails")
-        self._send_email = send_email
-        self._email_db = email_db
+    def __init__(self, **kwargs):
+        self._logger = kwargs.get("logger")
+        assert isinstance(self._logger, logging.Logger)
+        self._logger = self._logger.getChild("record_sent_emails")
+        self._send_email = kwargs.get("send_email")
+        assert isinstance(self._send_email, SendEmail)
+        self._email_db = kwargs.get("email_db")
+        assert isinstance(self._email_db, EmailDb)
 
     async def send_email(self, tx: Tx, email: dict):
         await self._send_email.send_email(tx, email)

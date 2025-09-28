@@ -1,19 +1,21 @@
 from src.shared.http_api import HttpApi
-from src.ctx import Ctx
 from src.shared.html_root import HtmlRoot
 import html
 from fastapi import Request
 from fastapi.responses import HTMLResponse
+from src.library.sql_db import SqlDb
+from fastapi import APIRouter
 
 
 class SentEmailsHttpApi(HttpApi):
-    def __init__(self, ctx: Ctx):
-        super().__init__(ctx=ctx)
-        self.ctx = ctx
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.sql_db = kwargs.get("sql_db")
+        assert isinstance(self.sql_db, SqlDb)
 
         @self.api_router.get("/sent_emails__list")
         async def list() -> HTMLResponse:
-            emails = await self.ctx.sql_db.query(
+            emails = await self.sql_db.query(
                 """
                 SELECT 
                     email__id,
@@ -60,7 +62,8 @@ class SentEmailsHttpApi(HttpApi):
         @self.api_router.get("/sent_emails__view")
         async def view(request: Request) -> HTMLResponse:
             email__id = request.query_params["email__id"]
-            emails = await self.ctx.sql_db.query(
+
+            emails = await self.sql_db.query(
                 """
                 SELECT 
                     email__id,
@@ -81,6 +84,8 @@ class SentEmailsHttpApi(HttpApi):
                 )
 
             email = emails[0]
+
+            assert email["email__id"] == email__id
 
             return HtmlRoot.response(
                 title="Sent Email",

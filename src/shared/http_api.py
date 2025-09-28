@@ -1,8 +1,7 @@
-from src.ctx import Ctx
+from abc import ABC, abstractmethod
 from fastapi import APIRouter
 
 
-class HttpApi:
-    def __init__(self, ctx: Ctx):
-        self.logger = ctx.logger.getChild(__name__)
+class HttpApi(ABC):
+    def __init__(self):
         self.api_router = APIRouter()

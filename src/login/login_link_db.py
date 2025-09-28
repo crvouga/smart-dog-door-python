@@ -4,7 +4,8 @@ from typing import Dict, Any
 
 
 class LoginLinkDb:
-    async def up(self, tx: Tx):
+    @staticmethod
+    async def up(tx: Tx):
         up = [
             """
             CREATE TABLE IF NOT EXISTS login_links (
@@ -24,17 +25,20 @@ class LoginLinkDb:
         for sql in up:
             await tx.execute(sql)
 
-    async def insert(self, tx: Tx, login_link: Dict[str, Any]) -> None:
+    @staticmethod
+    async def insert(tx: Tx, login_link: Dict[str, Any]) -> None:
         sql, params = Sql.dict_to_insert("login_links", login_link)
         await tx.execute(sql, params)
 
-    async def update(self, tx: Tx, login_link: Dict[str, Any]) -> None:
+    @staticmethod
+    async def update(tx: Tx, login_link: Dict[str, Any]) -> None:
         sql, params = Sql.dict_to_update_one_by_primary_key(
             "login_links", login_link, "login_link__id"
         )
         await tx.execute(sql, params)
 
-    async def find_by_token(self, tx: Tx, login_link__token: str) -> Dict[str, Any]:
+    @staticmethod
+    async def find_by_token(tx: Tx, login_link__token: str) -> Dict[str, Any]:
         found = await tx.query(
             f"SELECT * FROM login_links WHERE login_link__token = ? LIMIT 1",
             (login_link__token,),

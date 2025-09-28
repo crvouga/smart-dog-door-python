@@ -4,7 +4,8 @@ from typing import Dict, Any
 
 
 class UserDb:
-    async def up(self, tx: Tx):
+    @staticmethod
+    async def up(tx: Tx):
         up = [
             """
             CREATE TABLE IF NOT EXISTS users (
@@ -20,11 +21,13 @@ class UserDb:
         for sql in up:
             await tx.execute(sql)
 
-    async def insert(self, tx: Tx, user: Dict[str, Any]) -> None:
+    @staticmethod
+    async def insert(tx: Tx, user: Dict[str, Any]) -> None:
         sql, params = Sql.dict_to_insert("users", user)
         await tx.execute(sql, params)
 
-    async def find_by_email_address(self, tx: Tx, user__email_address: str):
+    @staticmethod
+    async def find_by_email_address(tx: Tx, user__email_address: str):
         found = await tx.query(
             "SELECT * FROM users WHERE user__email_address = ? LIMIT 1",
             (user__email_address,),
