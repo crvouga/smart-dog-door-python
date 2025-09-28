@@ -1,7 +1,7 @@
 import asyncio
-from typing import Any, Awaitable, Callable
-from fastapi import FastAPI, Request
-from fastapi.responses import RedirectResponse, Response
+from typing import Any
+from fastapi import FastAPI
+from fastapi.responses import RedirectResponse
 import uvicorn
 from src.library.life_cycle import LifeCycle
 import logging
@@ -10,38 +10,26 @@ from src.login.login_link_http_api import LoginLinkHttpApi
 from src.shared.result_page.result_page_http_api import ResultPageHttpApi
 from src.shared.http_api import HttpApi
 from src.shared.send_email.sent_emails_http_api import SentEmailsHttpApi
-from src.library.new_id import new_id
 from starlette.middleware.base import BaseHTTPMiddleware
 from src.library.sql_db import SqlDb
 from src.login.login_link_db import LoginLinkDb
 from src.shared.send_email.email_db import EmailDb
 from src.user.user_db import UserDb
 from src.user.user_session_db import UserSessionDb
+from src.library.session_id.session_id_set_cookie_middleware import (
+    session_id_set_cookie_middleware,
+)
 
 
 class AppHttpApi(LifeCycle):
     def __init__(self) -> None:
         logging.basicConfig(level=logging.INFO)
-        self.app = FastAPI()
 
         self.kwargs: dict[str, Any] = {}
         self.logger = logging.getLogger("app")
         self.kwargs["logger"] = self.logger
         self.sql_db = SqlDb(db_path="main.db")
         self.kwargs["sql_db"] = self.sql_db
-
-        async def session_middleware(
-            request: Request, call_next: Callable[[Request], Awaitable[Response]]
-        ):
-            if not request.cookies.get("session_id"):
-                response = await call_next(request)
-                response.set_cookie(
-                    key="session_id", value=new_id("session__"), httponly=True
-                )
-                return response
-            return await call_next(request)
-
-        self.app.add_middleware(BaseHTTPMiddleware, dispatch=session_middleware)
 
         http_apis: list[HttpApi] = [
             HealthCheckHttpApi(**self.kwargs),
@@ -50,6 +38,10 @@ class AppHttpApi(LifeCycle):
             SentEmailsHttpApi(**self.kwargs),
         ]
 
+        self.app = FastAPI()
+        self.app.add_middleware(
+            BaseHTTPMiddleware, dispatch=session_id_set_cookie_middleware
+        )
         for http_api in http_apis:
             self.app.include_router(http_api.api_router)
 
@@ -57,8 +49,10 @@ class AppHttpApi(LifeCycle):
         async def root() -> RedirectResponse:
             return RedirectResponse(url="/login_link__send", status_code=303)
 
-        config = uvicorn.Config(self.app, host="0.0.0.0", port=8000, log_level="info")
-        self._server = uvicorn.Server(config)
+        self._server_config = uvicorn.Config(
+            self.app, host="0.0.0.0", port=8000, log_level="info"
+        )
+        self._server = uvicorn.Server(self._server_config)
 
     def start(self) -> None:
         self.logger.info("Starting server on port 8000")
