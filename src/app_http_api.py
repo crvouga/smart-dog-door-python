@@ -1,3 +1,4 @@
+import asyncio
 from typing import Any
 from fastapi import FastAPI, Request
 from fastapi.responses import RedirectResponse
@@ -51,7 +52,7 @@ class AppHttpApi(LifeCycle):
             self.app.include_router(http_api.api_router)
 
         @self.app.get("/")
-        async def default_router(path: str) -> RedirectResponse:
+        async def root() -> RedirectResponse:
             return RedirectResponse(url="/login_link__send", status_code=303)
 
         config = uvicorn.Config(self.app, host="0.0.0.0", port=8000, log_level="info")
@@ -59,7 +60,6 @@ class AppHttpApi(LifeCycle):
 
     def start(self) -> None:
         self.logger.info("Starting server on port 8000")
-        import asyncio
 
         asyncio.run(self._start_async())
 
