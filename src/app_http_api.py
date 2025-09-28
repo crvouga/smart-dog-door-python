@@ -1,7 +1,7 @@
 import asyncio
-from typing import Any
+from typing import Any, Awaitable, Callable
 from fastapi import FastAPI, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, Response
 import uvicorn
 from src.library.life_cycle import LifeCycle
 import logging
@@ -30,7 +30,9 @@ class AppHttpApi(LifeCycle):
         self.sql_db = SqlDb(db_path="main.db")
         self.kwargs["sql_db"] = self.sql_db
 
-        async def session_middleware(request: Request, call_next):
+        async def session_middleware(
+            request: Request, call_next: Callable[[Request], Awaitable[Response]]
+        ):
             if not request.cookies.get("session_id"):
                 response = await call_next(request)
                 response.set_cookie(

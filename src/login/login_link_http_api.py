@@ -8,10 +8,10 @@ from src.shared.result_page.result_page_http_api import ResultPageHttpApi
 from src.login.login_link import LoginLink
 from datetime import datetime
 from src.shared.http_api import HttpApi
-from fastapi import APIRouter
 from src.library.sql_db import SqlDb
 from src.login.login_link_db import LoginLinkDb
 from src.shared.send_email.send_email_impl import SendEmailImpl
+from src.shared.send_email.send_email_interface import SendEmail
 from src.user.user_db import UserDb
 from src.user.user_session_db import UserSessionDb
 
@@ -20,14 +20,14 @@ class LoginLinkHttpApi(HttpApi):
 
     def __init__(self, **kwargs):
         super().__init__()
-        self.logger = kwargs.get("logger")
+        self.logger: logging.Logger = kwargs.get("logger")
         assert isinstance(self.logger, logging.Logger)
-        self.sql_db = kwargs.get("sql_db")
+        self.sql_db: SqlDb = kwargs.get("sql_db")
         assert isinstance(self.sql_db, SqlDb)
-        self.send_email = SendEmailImpl.init(self.logger)
+        self.send_email: SendEmail = SendEmailImpl.init(self.logger)
 
         @self.api_router.get("/login_link__send")
-        async def send_login_link_page():
+        async def send_login_link_page(request: Request):
             self.logger.info("Login requested")
             return HtmlRoot.response(
                 title="Smart Dog Door Login",
