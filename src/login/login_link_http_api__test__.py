@@ -87,7 +87,7 @@ class LoginLinkHttpApi(HttpApi):
 
                     self.logger.info(f"Login sent to {email_address}")
 
-                    await LoginLinkDb().insert(tx, login_link)
+                    await LoginLinkDb.insert(tx, login_link)
 
                 return ResultPageHttpApi.redirect(
                     title="Sent login link",

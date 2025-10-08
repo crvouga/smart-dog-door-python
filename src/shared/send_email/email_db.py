@@ -19,6 +19,9 @@ class EmailDb:
             """
             CREATE INDEX IF NOT EXISTS emails_email__to_index ON emails (email__to)
             """,
+            """
+            ALTER TABLE emails ADD COLUMN IF NOT EXISTS email__extra_json TEXT
+            """,
         ]
         for sql in up:
             await tx.execute(sql)
