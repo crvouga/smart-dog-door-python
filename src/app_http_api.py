@@ -2,6 +2,7 @@ import asyncio
 from typing import Any
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
+import os
 import uvicorn
 from src.library.life_cycle import LifeCycle
 import logging
@@ -49,13 +50,15 @@ class AppHttpApi(LifeCycle):
         async def root() -> RedirectResponse:
             return RedirectResponse(url="/login_link__send", status_code=303)
 
+        port = int(os.environ.get("PORT", "8000"))
         self._server_config = uvicorn.Config(
-            self.app, host="0.0.0.0", port=8000, log_level="info"
+            self.app, host="0.0.0.0", port=port, log_level="info"
         )
         self._server = uvicorn.Server(self._server_config)
 
     def start(self) -> None:
-        self.logger.info("Starting server on port 8000")
+        port = int(os.environ.get("PORT", "8000"))
+        self.logger.info(f"Starting server on port {port}")
 
         asyncio.run(self._start_async())
 
